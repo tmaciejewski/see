@@ -1,4 +1,4 @@
--module(crawler).
+-module(http).
 -export([getPage/1]).
 
 -define(TIMEOUT, 3000).
@@ -41,9 +41,13 @@ parseURL(URL) ->
         1 -> 
             parseURL(string:substr(URL, 8));
         _ ->
-            Div = string:chr(URL, $/),
-            Host = string:sub_string(URL, 1, Div - 1),
-            Resource = string:substr(URL, Div),
+            {Host, Resource} = 
+                case string:chr(URL, $/) of
+                     0  -> {URL, "/"};
+                    Div ->
+                        {string:sub_string(URL, 1, Div - 1),
+                         string:substr(URL, Div)}
+                end,                    
             case string:tokens(Host, ":") of
                 [Hostname] -> 
                     {Hostname, 80, Resource};
