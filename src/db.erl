@@ -21,10 +21,10 @@ init() ->
              {attributes, record_info(fields, link)}]),
      ok.
 
-page(URL, Code, Content) ->
+visit(URL, Code, Content) ->
     F = fun() -> 
             mnesia:write(#page{url = URL, code = Code,
-                    cdb:ontent = Content, last_visit = now()})
+                    content = Content, last_visit = now()})
     end,
     mnesia:transaction(F).
 
@@ -36,14 +36,19 @@ links(Links, From) ->
     lists:map(fun(Link) -> link(Link, From) end, Links),
     ok.
 
-queue(URL) ->
-    F = fun() -> mnesia:write(#page{url = URL}) end,
-    mnesia:transaction(F).
+queue([]) -> ok;
+queue([URL|Rest]) when is_list(URL) ->
+    case mnesia:transaction(fun() -> mnesia:read({page, URL}) end) of
+        {atomic, []} ->
+            mnesia:transaction(fun() -> mnesia:write(#page{url = URL}) end);
+        {atomic, _}  ->
+            ok 
+    end,
+    queue(Rest).
 
 next() ->
     F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
        Page#page.content == undefined])) end,
-
    case mnesia:transaction(F) of
        {atomic, [Next|_]} -> {ok, Next};
        {atomic,    []   } -> nothing

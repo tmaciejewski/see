@@ -15,11 +15,11 @@ getPage(URL) ->
     end. 
 
 request(Host, Resource) ->
-    string:join(["GET", Resource, "HTTP/1.1\n"
-            "Host:", Host, "\n"
-            "User-Agent: see crawler 0.1\n"
-            "Connection: close\n"
-            "\n"], " ").
+    string:join(["GET", Resource, "HTTP/1.1\r\n"
+            "Host:", Host, "\r\n"
+            "User-Agent: see crawler 0.1\r\n"
+            "Connection: close\r\n"
+            "\r\n"], " ").
 
 findHeader(_, []) -> error;
 findHeader(Name, [Header|Headers]) ->
