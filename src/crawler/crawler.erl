@@ -6,14 +6,14 @@
 start() ->
     gen_server:start(?MODULE, [], []).
 
-visit(Pid, URL) ->
-    gen_server:cast(Pid, {visit, URL}).
-
 stop(Pid) ->
     gen_server:cast(Pid, stop).
 
+visit(Pid, URL) ->
+    gen_server:cast(Pid, {visit, URL}).
+
 init(Args) ->
-    {ok, Args}.
+    {ok, Args, 3000}.
 
 links(WebPage) ->
     case  re:run(WebPage, "<a *href=\"([^\"]*)\"", 
@@ -22,6 +22,10 @@ links(WebPage) ->
             lists:append(Match);
         nomatch -> []
     end.  
+
+handle_info(timeout, State) ->
+    io:format("Timeout!\n"),
+    {noreply, State, 1000}.
 
 handle_cast({visit, URL}, State) ->
     {Code, Content} = http:getPage(URL),
