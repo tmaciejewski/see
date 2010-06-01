@@ -1,32 +1,37 @@
 -module(http).
--export([getPage/1]).
+-export([getPage/1, header/2]).
 
--define(TIMEOUT, 3000).
+-define(TIMEOUT, 5000).
 
 getPage(URL) ->
-    Response = request(URL),
-    case parseResponse(Response) of
-        {301, Headers, _} ->
-            {ok, Location} = findHeader("Location", Headers),
-            getPage(Location);
+    case request(URL) of
+        {ok, Response} ->
+            case parseResponse(Response) of
+                {Code, Headers, _} when (Code == 301) or (Code == 302) ->
+                    {ok, Location} = header("Location", Headers),
+                    getPage(Location);
 
-        {Code, _, Content} ->
-            {Code, Content}
-    end. 
+                {Code, Headers, Content} ->
+                    {ok, Code, Headers, Content}
+            end;
+        
+        {error, Reason} -> {error, Reason}
+    end.  
 
 request(Host, Resource) ->
     string:join(["GET", Resource, "HTTP/1.1\r\n"
             "Host:", Host, "\r\n"
             "User-Agent: see crawler 0.1\r\n"
+            "Accept: text/html,text/plain;q=0.9\r\n"
             "Connection: close\r\n"
             "\r\n"], " ").
 
-findHeader(_, []) -> error;
-findHeader(Name, [Header|Headers]) ->
+header(_, []) -> error;
+header(Name, [Header|Headers]) ->
     Div = string:chr(Header, $:),
     case string:sub_string(Header, 1, Div - 1) of
         Name -> {ok, string:strip(string:substr(Header, Div + 1))};
-          _  -> findHeader(Name, Headers)
+          _  -> header(Name, Headers)
     end.
 
 parseResponse(Response) ->
@@ -61,9 +66,10 @@ request(URL) ->
     case gen_tcp:connect(Host, Port, [], ?TIMEOUT) of
         {ok, Socket} ->
             gen_tcp:send(Socket, request(Host, Request)),
-            receiveData(Socket, []);
+            {ok, receiveData(Socket, [])};
         {error, Reason} ->
-            error_logger:error_report(Reason)
+            error_logger:error_report(Reason),
+            {error, Reason}
     end.
 
 receiveData(Socket, SoFar) ->
