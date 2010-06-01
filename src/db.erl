@@ -12,12 +12,14 @@ start() ->
 init() ->
      mnesia:create_schema([node()]),
 
+     start(),
+
      mnesia:delete_table(page),
      mnesia:delete_table(link),
 
-     mnesia:create_table(page, [{disc_copies, [node()]}, 
+     {atomic, ok} = mnesia:create_table(page, [{disc_copies, [node()]}, 
              {attributes, record_info(fields, page)}]),
-     mnesia:create_table(link, [{disc_copies, [node()]}, 
+     {atomic, ok} = mnesia:create_table(link, [{disc_copies, [node()]}, 
              {attributes, record_info(fields, link)}]),
      ok.
 
@@ -33,8 +35,7 @@ link(To, From) ->
     mnesia:transaction(F).
 
 links(Links, From) ->
-    lists:map(fun(Link) -> link(Link, From) end, Links),
-    ok.
+    lists:foreach(fun(Link) -> link(Link, From) end, Links).
 
 queue([]) -> ok;
 queue([URL|Rest]) when is_list(URL) ->
@@ -44,14 +45,20 @@ queue([URL|Rest]) when is_list(URL) ->
         {atomic, _}  ->
             ok 
     end,
-    queue(Rest).
+    queue(Rest);
+
+queue(URL) ->
+    queue([URL]).
 
 next() ->
     F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
        Page#page.content == undefined])) end,
    case mnesia:transaction(F) of
-       {atomic, [Next|_]} -> {ok, Next};
-       {atomic,    []   } -> nothing
+       {atomic, [Next|_]} -> 
+           visit(Next, undefined, "<visiting...>"),
+           {ok, Next};
+       {atomic,    []   } ->
+           nothing
     end.
 
 search(Phrase) ->
