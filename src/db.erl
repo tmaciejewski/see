@@ -53,9 +53,8 @@ queue(URL) ->
 next() ->
     F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
        Page#page.content == undefined])) end,
-   case mnesia:transaction(F) of
+    case mnesia:transaction(F) of
        {atomic, [Next|_]} -> 
-           visit(Next, undefined, "<visiting...>"),
            {ok, Next};
        {atomic,    []   } ->
            nothing

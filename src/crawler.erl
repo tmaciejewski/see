@@ -29,6 +29,7 @@ handle_info(timeout, State) ->
         nothing ->
             {noreply, State, 1000};
         {ok, Next} ->
+            db:visit(Next, undefined, "<visiting...>"),
             handle_cast({visit, Next}, State),
             {noreply, State, 1}
    end.
