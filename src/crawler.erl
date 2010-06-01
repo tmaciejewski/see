@@ -33,14 +33,29 @@ handle_info(timeout, State) ->
             {noreply, State, 1}
    end.
 
+is_text("text/html") -> true;
+is_text("text/plain") -> true;
+is_text(_) -> false.
+
 handle_cast({visit, URL}, State) ->
     io:format("Getting ~s... ", [URL]),
-    {Code, Content} = http:getPage(URL),
-    Links = links(URL, Content),
-    io:format(" ~w\n", [Code]),
-    db:visit(URL, Code, Content),
-    db:links(Links, URL),
-    db:queue(Links),
+    case http:getPage(URL) of
+        {ok, Code, Headers, Content} ->
+            io:format(" ~w\n", [Code]),
+            {ok, Type} = http:header("Content-Type", Headers),
+            case is_text(hd(string:tokens(Type, ";"))) of
+                true ->
+                    Links = links(URL, Content),
+                    db:visit(URL, Code, Content),
+                    db:links(Links, URL),
+                    db:queue(Links);
+                false ->
+                    db:visit(URL, Code, "<binary>")
+            end;
+
+        {error, Reason} ->
+            db:visit(URL, error, Reason)
+    end,
     {noreply, State};
 
 handle_cast(stop, State) ->
