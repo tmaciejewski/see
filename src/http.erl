@@ -3,6 +3,9 @@
 
 -define(TIMEOUT, 5000).
 
+getPage([$h, $t, $t, $p, $s, $:, $/, $/ | _]) -> 
+    {error, https};
+
 getPage(URL) ->
     case request(URL) of
         {ok, Response} ->
@@ -28,9 +31,10 @@ request(Host, Resource) ->
 
 header(_, []) -> error;
 header(Name, [Header|Headers]) ->
+    LowerName = string:to_lower(Name),
     Div = string:chr(Header, $:),
-    case string:sub_string(Header, 1, Div - 1) of
-        Name -> {ok, string:strip(string:substr(Header, Div + 1))};
+    case string:to_lower(string:sub_string(Header, 1, Div - 1)) of
+        LowerName -> {ok, string:strip(string:substr(Header, Div + 1))};
           _  -> header(Name, Headers)
     end.
 
@@ -41,34 +45,34 @@ parseResponse(Response) ->
     Content = string:substr(Response, Div + 4),
     {list_to_integer(Code),Headers, Content}.
 
+parseURL([$h, $t, $t, $p, $:, $/, $/ | URL]) ->
+    parseURL(URL);
+
 parseURL(URL) ->
-    case string:str(URL, "http://") of
-        1 -> 
-            parseURL(string:substr(URL, 8));
-        _ ->
-            {Host, Resource} = 
-                case string:chr(URL, $/) of
-                     0  -> {URL, "/"};
-                    Div ->
-                        {string:sub_string(URL, 1, Div - 1),
-                         string:substr(URL, Div)}
-                end,                    
-            case string:tokens(Host, ":") of
-                [Hostname] -> 
-                    {Hostname, 80, Resource};
-                [Hostname, Port] ->
-                    {Hostname, list_to_integer(Port), Resource}
-            end
+    {Host, Resource} = 
+        case string:chr(URL, $/) of
+             0  -> {URL, "/"};
+            Div ->
+                {string:sub_string(URL, 1, Div - 1),
+                 string:substr(URL, Div)}
+        end,                    
+    case string:tokens(Host, ":") of
+        [Hostname] -> 
+            {Hostname, 80, Resource};
+        [Hostname, Port] ->
+            {Hostname, list_to_integer(Port), Resource}
     end.
 
 request(URL) ->
     {Host, Port, Request} = parseURL(URL),
+    io:format("Connecting ~s\n", [URL]),
     case gen_tcp:connect(Host, Port, [], ?TIMEOUT) of
         {ok, Socket} ->
             gen_tcp:send(Socket, request(Host, Request)),
             {ok, receiveData(Socket, [])};
         {error, Reason} ->
-            error_logger:error_report(Reason),
+            error_logger:error_msg("Can't connect to '~s': ~w\n", 
+                [URL, Reason]),
             {error, Reason}
     end.
 
