@@ -41,7 +41,8 @@ queue([]) -> ok;
 queue([URL|Rest]) when is_list(URL) ->
     case mnesia:transaction(fun() -> mnesia:read({page, URL}) end) of
         {atomic, []} ->
-            mnesia:transaction(fun() -> mnesia:write(#page{url = URL}) end);
+            mnesia:transaction(fun() -> mnesia:write(#page{url = URL,
+                                last_visit = now()}) end);
         {atomic, _}  ->
             ok 
     end,
@@ -51,10 +52,14 @@ queue(URL) ->
     queue([URL]).
 
 next() ->
-    F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
-       Page#page.content == undefined])) end,
+    F = fun() -> 
+        Q = qlc:q([{Page#page.url, Page#page.last_visit} || 
+                    Page <- mnesia:table(page), Page#page.content == undefined]),
+        qlc:eval(qlc:sort(Q, {order, fun({_, A}, {_, B}) -> 
+                            timer:now_diff(A, B) < 0 end}))
+    end,
     case mnesia:transaction(F) of
-       {atomic, [Next|_]} -> 
+       {atomic, [{Next, _}|_]} -> 
            {ok, Next};
        {atomic,    []   } ->
            nothing
@@ -62,7 +67,7 @@ next() ->
 
 search(Phrase) ->
     F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
-        Page#page.content /= undefined, string:str(Page#page.content, Phrase) > 0])) end,
+        is_list(Page#page.content), string:str(Page#page.content, Phrase) > 0])) end,
     {atomic, Results} = mnesia:transaction(F),
     Results.
 
