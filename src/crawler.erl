@@ -38,6 +38,11 @@ is_text("text/html") -> true;
 is_text("text/plain") -> true;
 is_text(_) -> false.
 
+stripPage(Content) ->
+    Body = re:replace(Content, ".*<body>(.*)</body>.*", "\1", 
+        [global, {return, list}, caseless]),
+    re:replace(Body, "<[^>]+>", "", [global, {return, list}]).
+
 handle_cast({visit, URL}, State) ->
     io:format("Getting ~s... ", [URL]),
     case http:getPage(URL) of
@@ -47,7 +52,7 @@ handle_cast({visit, URL}, State) ->
             case is_text(hd(string:tokens(Type, ";"))) of
                 true ->
                     Links = links(URL, Content),
-                    db:visit(URL, Code, Content),
+                    db:visit(URL, Code, stripPage(Content)),
                     db:links(Links, URL),
                     db:queue(Links);
                 false ->
