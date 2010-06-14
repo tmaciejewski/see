@@ -1,9 +1,11 @@
 -module(http).
--export([getPage/1, header/2]).
+%-export([getPage/1, header/2]).
+-compile(export_all).
 
--define(TIMEOUT, 5000).
+-define(TIMEOUT, 10000).
 
-getPage([$h, $t, $t, $p, $s, $:, $/, $/ | _]) -> 
+getPage([$h, $t, $t, $p, $s, $:, $/, $/ | _]) ->
+    error_logger:error_msg("HTTPS is not implemented\n"),
     {error, https};
 
 getPage(URL) ->
@@ -22,12 +24,12 @@ getPage(URL) ->
     end.  
 
 request(Host, Resource) ->
-    string:join(["GET", Resource, "HTTP/1.1\r\n"
-            "Host:", Host, "\r\n"
+    string:join(["GET ", Resource, " HTTP/1.1\r\n"
+            "Host: ", Host, "\r\n"
             "User-Agent: see crawler 0.1\r\n"
             "Accept: text/html,text/plain;q=0.9\r\n"
             "Connection: close\r\n"
-            "\r\n"], " ").
+            "\r\n"], "").
 
 header(_, []) -> error;
 header(Name, [Header|Headers]) ->
@@ -50,7 +52,7 @@ parseURL([$h, $t, $t, $p, $:, $/, $/ | URL]) ->
 
 parseURL(URL) ->
     {Host, Resource} = 
-        case string:chr(URL, $/) of
+    case string:chr(URL, $/) of
              0  -> {URL, "/"};
             Div ->
                 {string:sub_string(URL, 1, Div - 1),
@@ -60,20 +62,26 @@ parseURL(URL) ->
         [Hostname] -> 
             {Hostname, 80, Resource};
         [Hostname, Port] ->
-            {Hostname, list_to_integer(Port), Resource}
+            {Hostname, list_to_integer(Port), Resource};
+        _ -> 
+            error_logger:error_msg("Bad URL: ~s\n", [URL]),
+            bad_url
     end.
 
 request(URL) ->
-    {Host, Port, Request} = parseURL(URL),
-    io:format("Connecting ~s\n", [URL]),
-    case gen_tcp:connect(Host, Port, [], ?TIMEOUT) of
-        {ok, Socket} ->
-            gen_tcp:send(Socket, request(Host, Request)),
-            {ok, receiveData(Socket, [])};
-        {error, Reason} ->
-            error_logger:error_msg("Can't connect to '~s': ~w\n", 
-                [URL, Reason]),
-            {error, Reason}
+    case parseURL(URL) of
+        {Host, Port, Request} ->
+            case gen_tcp:connect(Host, Port, [], ?TIMEOUT) of
+                {ok, Socket} ->
+                    gen_tcp:send(Socket, request(Host, Request)),
+                    receiveData(Socket, []);
+                {error, Reason} ->
+                    error_logger:error_msg("Can't connect to '~s': ~w\n", 
+                        [URL, Reason]),
+                    {error, Reason}
+            end;
+
+        bad_url -> {error, bad_url}
     end.
 
 receiveData(Socket, SoFar) ->
@@ -81,7 +89,9 @@ receiveData(Socket, SoFar) ->
         {tcp, Socket, Bin} ->
             receiveData(Socket, [Bin|SoFar]);
         {tcp_closed, Socket} ->
-            lists:concat(lists:reverse(SoFar))
+            {ok, lists:concat(lists:reverse(SoFar))}
     after ?TIMEOUT ->
-        lists:concat(lists:reverse(SoFar))
+        error_logger:error_msg("Connection timeout!\n"),
+        gen_tcp:close(Socket),
+        {error, timeout}
     end.
