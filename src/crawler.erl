@@ -16,14 +16,6 @@ visit(Pid, URL) ->
 init(Args) ->
     {ok, Args, 0}.
 
-links(_URL, WebPage) ->
-    case  re:run(WebPage, "<a *href=\"(http://[^\"# ]*)", 
-                [global, {capture, [1], list}]) of
-        {match, Match} ->
-            lists:append(Match);
-        nomatch -> []
-    end.  
-
 handle_info(timeout, State) ->
     case db:next() of
         nothing ->
@@ -46,12 +38,11 @@ stripPage(Content) ->
 handle_cast({visit, URL}, State) ->
     io:format("Getting ~s... ", [URL]),
     case http:getPage(URL) of
-        {ok, Code, Headers, Content} ->
+        {ok, Code, Headers, Content, Links} ->
             io:format(" ~w\n", [Code]),
             {ok, Type} = http:header("Content-Type", Headers),
             case is_text(hd(string:tokens(Type, ";"))) of
                 true ->
-                    Links = links(URL, Content),
                     db:visit(URL, Code, stripPage(Content)),
                     db:links(Links, URL),
                     db:queue(Links);

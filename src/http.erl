@@ -14,13 +14,42 @@ getPage(URL) ->
             case parseResponse(Response) of
                 {Code, Headers, _} when (Code == 301) or (Code == 302) ->
                     {ok, Location} = header("Location", Headers),
-                    getPage(Location);
+                    getPage(absLink(URL, Location));
 
                 {Code, Headers, Content} ->
-                    {ok, Code, Headers, Content}
+                    {ok, Code, Headers, Content, links(URL, Content)}
             end;
         
         {error, Reason} -> {error, Reason}
+    end.  
+
+absLink(URL, [$/|Link]) ->
+    {Host, Port, _} = parseURL(URL),
+    string:join([Host, ":", integer_to_list(Port), "/", Link], "");
+
+absLink(URL, [$., $., $/|Link]) ->
+    case string:rchr(URL, $/) of
+        0 ->
+            absLink(URL, Link);
+        X ->
+            absLink(string:substr(URL, 1, X - 1), Link)
+    end;
+
+absLink(URL, Link) ->
+    case string:rchr(URL, $/) of
+        0 ->
+            string:join([URL, "/", Link]);
+        X ->
+            string:join([string:substr(URL, 1, X), Link], "")
+    end.
+
+links(URL, WebPage) ->
+    case  re:run(WebPage, "<a *href=\"([^\"# ]*)", 
+                [global, {capture, [1], list}]) of
+        {match, Match} ->
+            lists:map(fun(Link) -> absLink(URL, Link) end, 
+                lists:append(Match));
+        nomatch -> []
     end.  
 
 request(Host, Resource) ->
