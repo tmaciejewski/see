@@ -22,7 +22,7 @@ handle_info(timeout, State) ->
             {noreply, State, 1000};
         {ok, Next} ->
             db:visit(Next, undefined, "<visiting...>"),
-            handle_cast({visit, Next}, State),
+            visit(self(), Next),
             {noreply, State, 1}
    end.
 
@@ -53,7 +53,7 @@ handle_cast({visit, URL}, State) ->
         {error, Reason} ->
             db:visit(URL, error, Reason)
     end,
-    {noreply, State};
+    {noreply, State, 1};
 
 handle_cast(stop, State) ->
     {stop, normal, State}.
