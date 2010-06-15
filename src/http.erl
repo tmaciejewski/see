@@ -23,9 +23,17 @@ getPage(URL) ->
         {error, Reason} -> {error, Reason}
     end.  
 
+absLink(_, [$h, $t, $t, $p, $:, $/, $/ | Link]) ->
+    Link;
+
 absLink(URL, [$/|Link]) ->
-    {Host, Port, _} = parseURL(URL),
-    string:join([Host, ":", integer_to_list(Port), "/", Link], "");
+    case parseURL(URL) of
+        {Host, 80, _} ->
+            string:join([Host, "/", Link], "");
+
+        {Host, Port, _ } ->
+            string:join([Host, ":", integer_to_list(Port), "/", Link], "")
+    end;
 
 absLink(URL, [$., $., $/|Link]) ->
     case string:rchr(URL, $/) of
@@ -38,7 +46,7 @@ absLink(URL, [$., $., $/|Link]) ->
 absLink(URL, Link) ->
     case string:rchr(URL, $/) of
         0 ->
-            string:join([URL, "/", Link]);
+            string:join([URL, "/", Link], "");
         X ->
             string:join([string:substr(URL, 1, X), Link], "")
     end.
