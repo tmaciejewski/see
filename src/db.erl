@@ -9,19 +9,22 @@
 start() ->
     mnesia:start().
 
+stop() ->
+    mnesia:stop().
+
 init() ->
-     mnesia:create_schema([node()]),
+    mnesia:create_schema([node()]),
 
-     start(),
+    start(),
 
-     mnesia:delete_table(page),
-     mnesia:delete_table(link),
+    mnesia:delete_table(page),
+    mnesia:delete_table(link),
 
-     {atomic, ok} = mnesia:create_table(page, [{disc_copies, [node()]}, 
+    {atomic, ok} = mnesia:create_table(page, [{disc_copies, [node()]}, 
              {attributes, record_info(fields, page)}]),
-     {atomic, ok} = mnesia:create_table(link, [{disc_copies, [node()]}, 
+    {atomic, ok} = mnesia:create_table(link, [{disc_copies, [node()]}, 
              {attributes, record_info(fields, link)}]),
-     ok.
+    ok.
 
 visit(URL, Code, Content) ->
     F = fun() -> 
@@ -65,9 +68,21 @@ next() ->
            nothing
     end.
 
-search(Phrase) ->
-    F = fun() -> qlc:eval(qlc:q([Page#page.url || Page <- mnesia:table(page), 
-        is_list(Page#page.content), string:str(Page#page.content, Phrase) > 0])) end,
+occurs(Phrases, Content) ->
+    F = fun(Phrase) ->
+        case re:run(Content, Phrase, [global, caseless]) of
+            nomatch -> 0;
+            {match, Match} -> length(Match)
+        end
+    end, 
+    lists:map(F, Phrases).
+
+search(Phrases) ->
+    F = fun() -> 
+            Q = qlc:q([{Page#page.url, lists:sum(occurs(Phrases, Page#page.content))} || Page <- mnesia:table(page), 
+                is_list(Page#page.content), lists:all(fun(X) -> X > 0 end, occurs(Phrases, Page#page.content))]),
+        qlc:eval(qlc:sort(Q, {order, fun({_, A}, {_, B}) -> A > B end}))
+    end,
     {atomic, Results} = mnesia:transaction(F),
     Results.
 
