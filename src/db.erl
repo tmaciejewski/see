@@ -1,10 +1,10 @@
 -module(db).
 -compile(export_all).
 
-start() ->
-    gen_server:start({global, db}, db_imp, [], []).
+start(_Type, Args) ->
+    gen_server:start({global, db}, db_imp, Args, []).
 
-stop() ->
+stop(_State) ->
     gen_server:call({global, db}, stop).
 
 visit(URL, Code, Content) ->
