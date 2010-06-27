@@ -61,7 +61,7 @@ links(URL, WebPage) ->
     end.  
 
 request(Host, Resource) ->
-    string:join(["GET ", Resource, " HTTP/1.0\r\n"
+    string:join(["GET ", Resource, " HTTP/1.1\r\n"
             "Host: ", Host, "\r\n"
             "User-Agent: see crawler 0.1\r\n"
             "Accept: text/html,text/plain;q=0.9\r\n"

@@ -21,5 +21,5 @@ add(Sup, N) ->
     add(Sup, N - 1).
 
 init([]) ->
-    {ok, {{simple_one_for_one, 1, 1}, [{1, {crawler, start, []}, transient, 1, 
+    {ok, {{simple_one_for_one, 10, 5}, [{1, {crawler, start, []}, transient, 1,
                     worker, [crawler]}]}}.

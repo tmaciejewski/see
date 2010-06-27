@@ -5,7 +5,7 @@
 -import(db).
 
 start() ->
-    gen_server:start(?MODULE, [], []).
+    gen_server:start_link(?MODULE, [], []).
 
 stop(Pid) ->
     gen_server:cast(Pid, stop).
@@ -36,7 +36,7 @@ stripPage(Content) ->
     re:replace(Body, "<[^>]+>", "", [global, {return, list}]).
 
 handle_cast({visit, URL}, State) ->
-    io:format("Getting ~s... ", [URL]),
+    io:format("Getting http://~s... ", [URL]),
     case http:getPage(URL) of
         {ok, Code, Headers, Content, Links} ->
             io:format(" ~w\n", [Code]),
