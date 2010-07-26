@@ -1,0 +1,36 @@
+Hello
+-----
+
+SEE (or see, whatever) is a simple search engine written in Erlang. So
+far it can crawl through web indexing new pages into Mnesia database.
+
+It uses OTP supervisor to create web crawlers as workers. Before that
+the database must be initialized.
+
+Example session
+---------------
+
+Initializing search engine:
+
+> application:start(db).
+> application:start(crawler).
+
+Adding first URL to queue:
+
+> db:queue("www.yahoo.com").
+
+Adding a crawler:
+
+> crawler_sup:add().
+
+or 
+
+> crawler_sup:add(1).
+
+Searching indexed pages:
+
+> db:search(["USA", "Obama"]).
+
+It'll search pages, where both "USA" and "Obama" appears, and returns a list
+of them in an order from highest number of occurrences to lowest.
+
