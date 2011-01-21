@@ -1,1 +1,1 @@
-{"src/*", [debug_info, {outdir, "ebin"}]}.
+{"src/*", [{outdir, "ebin"}]}.
