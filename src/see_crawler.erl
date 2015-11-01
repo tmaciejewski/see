@@ -24,7 +24,7 @@ visit("http://" ++ URL) ->
     visit(URL);
 
 visit(URL) ->
-    case http:request("http://" ++ URL) of
+    case httpc:request("http://" ++ URL) of
         {ok, {{_, Code, _}, Headers, Content}} ->
             MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
             case is_text(MIME) of
