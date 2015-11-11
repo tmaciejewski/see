@@ -1,0 +1,12 @@
+{application, see,
+ [
+  {description, "Search Engine in Erlang"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { see_app, []}},
+  {env, []}
+ ]}.

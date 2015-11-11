@@ -67,7 +67,7 @@ terminate(_, _) ->
 handle_cast({visit, URL, Code, Content}, State) ->
     F = fun() -> 
             mnesia:write(#page{url = URL, code = Code,
-                    content = Content, last_visit = now()})
+                    content = Content, last_visit = erlang:timestamp()})
     end,
     mnesia:transaction(F),
     {noreply, State};
@@ -81,7 +81,7 @@ handle_cast({queue, URL}, State) ->
     case mnesia:transaction(fun() -> mnesia:read({page, URL}) end) of
         {atomic, []} ->
             mnesia:transaction(fun() -> mnesia:write(#page{url = URL,
-                                last_visit = now()}) end);
+                                last_visit = erlang:timestamp()}) end);
         {atomic, _}  ->
             ok 
     end,
