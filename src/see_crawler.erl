@@ -54,7 +54,7 @@ handle_info(timeout, State) ->
         {ok, Next} ->
             see_db:visit(Next, undefined, visiting),
             visit(Next),
-            {noreply, State, 1}
+            {noreply, State, ?SLEEP_TIMEOUT}
    end.
 
 is_text("text/html") -> true;
