@@ -3,3 +3,5 @@ ebin
 Mnesia.*
 TODO*
 *.dump
+.eunit
+.rebar
