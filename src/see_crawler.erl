@@ -29,17 +29,14 @@ visit(URL) ->
             MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
             case is_text(MIME) of
                 true ->
-                    Links = links(URL, Content),
-                    see_db:visit(URL, Code, stripPage(Content)),
-                    see_db:links(Links, URL),
-                    lists:foreach(fun(Link) -> see_db:queue(Link) end, Links);
+                    see_db:visited(URL, Code, Content);
                 false ->
-                    see_db:visit(URL, binary, MIME)
+                    see_db:visited(URL, binary, MIME)
             end;
 
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
-            see_db:visit(URL, error, Reason)
+            see_db:visited(URL, error, Reason)
     end.
 
 %----------------------------------------------------------
@@ -52,7 +49,6 @@ handle_info(timeout, State) ->
         nothing ->
             {noreply, State, ?SLEEP_TIMEOUT};
         {ok, Next} ->
-            see_db:visit(Next, undefined, visiting),
             visit(Next),
             {noreply, State, ?SLEEP_TIMEOUT}
    end.
@@ -60,31 +56,6 @@ handle_info(timeout, State) ->
 is_text("text/html") -> true;
 is_text("text/plain") -> true;
 is_text(_) -> false.
-
-absLink(_, "http://" ++ Link) ->
-    Link;
-
-absLink(URL, "/" ++ Link) ->
-    [Host|_] = string:tokens(URL, "/"),
-    string:join([Host, Link], "/");
-
-absLink(_, _) ->
-    "".
-
-links(URL, WebPage) ->
-    case  re:run(WebPage, "<a *href=\"([^\"# ]*)", 
-                [global, {capture, [1], list}]) of
-        {match, Match} ->
-            Links = lists:map(fun(Link) -> absLink(URL, Link) end, 
-                lists:append(Match)),
-            lists:filter(fun(X) -> length(X) > 0 end, Links);
-        nomatch -> []
-    end.  
-
-stripPage(Content) ->
-    Body = re:replace(Content, ".*<body>(.*)</body>.*", "\1", 
-        [global, {return, list}, caseless]),
-    re:replace(Body, "<[^>]+>", "", [global, {return, list}]).
 
 handle_call(_, _, State) ->
     {reply, ok, State}.

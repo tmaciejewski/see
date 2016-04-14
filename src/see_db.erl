@@ -4,7 +4,7 @@
 -export([start/0,
          start_link/0,
          stop/0,
-         visit/3,
+         visited/3,
          link/2,
          links/2,
          queue/1,
@@ -32,8 +32,8 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visit(URL, Code, Content) ->
-    gen_server:cast(?MODULE, {visit, URL, Code, Content}).
+visited(URL, Code, Content) ->
+    gen_server:cast(?MODULE, {visited, URL, Code, Content}).
 
 link(To, From) ->
     gen_server:cast(?MODULE, {link, To, From}).
@@ -64,7 +64,7 @@ init(_Args) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visit, URL, Code, Content}, State) ->
+handle_cast({visited, URL, Code, Content}, State) ->
     F = fun() -> 
             mnesia:write(#page{url = URL, code = Code,
                     content = Content, last_visit = erlang:timestamp()})
