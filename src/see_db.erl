@@ -5,8 +5,6 @@
          start_link/0,
          stop/0,
          visited/3,
-         link/2,
-         links/2,
          queue/1,
          next/0,
          search/1]).
@@ -18,10 +16,8 @@
          terminate/2,
          code_change/3]).
 
--include_lib("stdlib/include/qlc.hrl"). 
-
--record(page, {url, code, content, last_visit}).
--record(link, {to, from}).
+-record(page, {id, url, code, last_visit = erlang:timestamp()}).
+-record(index, {word, pages}).
 
 start() ->
     gen_server:start({local, ?MODULE}, ?MODULE, [], []).
@@ -35,12 +31,6 @@ stop() ->
 visited(URL, Code, Content) ->
     gen_server:cast(?MODULE, {visited, URL, Code, Content}).
 
-link(To, From) ->
-    gen_server:cast(?MODULE, {link, To, From}).
-
-links(Links, From) ->
-    lists:foreach(fun(Link) -> link(Link, From) end, Links).
-
 queue(URL) ->
     gen_server:cast(?MODULE, {queue, URL}).
 
@@ -53,83 +43,65 @@ search(Phrases) ->
 %----------------------------------------------------------
 
 init(_Args) ->
-    mnesia:create_table(page, [{disc_only_copies, [node()]}, 
-             {attributes, record_info(fields, page)}]),
-    mnesia:create_table(link, [{disc_only_copies, [node()]}, 
-             {attributes, record_info(fields, link)},
-             {type, bag}]),
-
-    {ok, []}.
+    PagesTid = ets:new(pages, [{keypos, #page.id}]),
+    IndexTid = ets:new(index, [{keypos, #index.word}]),
+    {ok, {PagesTid, IndexTid}}.
 
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, Code, Content}, State) ->
-    F = fun() -> 
-            mnesia:write(#page{url = URL, code = Code,
-                    content = Content, last_visit = erlang:timestamp()})
-    end,
-    mnesia:transaction(F),
+handle_cast({visited, URL, Code, Content}, {PagesTid, IndexTid}) ->
+    Id = erlang:phash2(URL),
+    ets:insert(PagesTid, #page{id = Id, url = URL, code = Code}),
+    Words = string:tokens(Content, " "),
+    lists:foreach(fun(Word) -> update_word(IndexTid, Word, Id) end, Words),
+    {noreply, {PagesTid, IndexTid}};
+
+handle_cast({queue, URL}, {PagesTid, _} = State) ->
+    Id = erlang:phash2(URL),
+    ets:insert(PagesTid, #page{id = Id, url = URL, code = null, last_visit = null}),
     {noreply, State};
 
-handle_cast({link, To, From}, State) ->
-    F = fun() -> mnesia:write(#link{to = To, from = From}) end,
-    mnesia:transaction(F),
-    {noreply, State};
-
-handle_cast({queue, URL}, State) ->
-    case mnesia:transaction(fun() -> mnesia:read({page, URL}) end) of
-        {atomic, []} ->
-            mnesia:transaction(fun() -> mnesia:write(#page{url = URL,
-                                last_visit = erlang:timestamp()}) end);
-        {atomic, _}  ->
-            ok 
-    end,
+handle_cast(_, State) ->
     {noreply, State}.
 
 handle_call(stop, _, State) ->
     {stop, shutdown, ok, State};
 
-handle_call(next, _, State) ->
-    F = fun() -> 
-        Q = qlc:q([{Page#page.url, Page#page.last_visit} || 
-                    Page <- mnesia:table(page), Page#page.content == undefined]),
-        qlc:eval(qlc:sort(Q, {order, fun({_, A}, {_, B}) -> 
-                            timer:now_diff(A, B) < 0 end}))
-    end,
-    case mnesia:transaction(F) of
-       {atomic, [{Next, _}|_]} -> 
-           {reply, {ok, Next}, State};
-       {atomic, []} ->
-           {reply, nothing, State}
+handle_call(next, _, {PagesTid, _} = State) ->
+    case ets:match(PagesTid, #page{last_visit = null, url = '$1', _ = '_'}, 1) of
+        {[[URL]], _} ->
+            {reply, URL, State};
+        _ ->
+            {reply, nothing, State}
     end;
 
-handle_call({search, Phrases}, _, State) ->
-    F = fun() -> 
-            Q = qlc:q([{Page#page.url, lists:sum(occurs(Phrases, Page#page.content))} || Page <- mnesia:table(page), 
-                Page#page.code == 200, lists:all(fun(X) -> X > 0 end, occurs(Phrases, Page#page.content))]),
-        qlc:eval(qlc:sort(Q, {order, fun({_, A}, {_, B}) -> A > B end}))
-    end,
-    case mnesia:transaction(F) of
-        {atomic, Results} ->
-            {reply, {ok, Results}, State};
-        {aborted, Reason} ->
-            {reply, {error, Reason}, State}
-    end.
+handle_call({search, Word}, _, {PagesTid, IndexTid} = State) ->
+    case ets:lookup(IndexTid, Word) of
+        [] ->
+            {reply, [], State};
+        [#index{pages = Pages}] ->
+            {reply, lists:map(fun(PageId) ->
+                              [#page{url = URL}] = ets:lookup(PagesTid, PageId),
+                              URL
+                      end, Pages), State}
+    end;
+
+handle_call(_, _, State) ->
+    {noreply, State}.
 
 handle_info(_, State) ->
     {noreply, State}.
 
-occurs(Phrases, Content) ->
-    F = fun(Phrase) ->
-        case re:run(Content, Phrase, [global, caseless]) of
-            nomatch ->
-                0;
-            {match, Match} ->
-                length(Match)
-        end
-    end, 
-    lists:map(F, Phrases).
-    
 code_change(_OldVsn, State, _) ->
     {ok, State}.
+
+%----------------------------------------------------------
+
+update_word(IndexTid, Word, Id) ->
+    case ets:lookup(IndexTid, Word) of
+        [#index{pages = Pages}] ->
+            ets:insert(IndexTid, #index{word = Word, pages = [Id|Pages]});
+        [] ->
+            ets:insert(IndexTid, #index{word = Word, pages = [Id]})
+    end.
