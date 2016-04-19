@@ -1,8 +1,8 @@
 -module(see_crawler_test).
 -include_lib("eunit/include/eunit.hrl").
 
--define(URL, "foo,com").
--define(RequestURL, "http://foo,com").
+-define(URL, "foo.com").
+-define(RequestURL, "http://foo.com").
 
 trigger_timeout(Pid) ->
     Pid ! timeout.
@@ -40,6 +40,22 @@ when_next_url_is_error__call_visited_with_undefined__test_() ->
      end}.
 
 when_next_url_is_binary__call_visited_with_binary__test_() ->
+    {setup, fun start_crawler/0, fun stop_crawler/1,
+     fun(Pid) ->
+             MIME = "application/octet-stream",
+             Headers = [{"content-type", MIME}],
+             Content = "content",
+             Code = 200,
+             Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
+
+             meck:expect(httpc, request, [{[?RequestURL], {ok, Page}}]),
+             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db, visited, [{[?URL, binary, MIME], ok}]),
+             trigger_timeout(Pid),
+             ?_assert(is_pid(Pid))
+     end}.
+
+when_next_url_is_text__call_visited_with_content__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
              Headers = [{"content-type", "text/plain"}],
