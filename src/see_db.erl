@@ -76,16 +76,11 @@ handle_call(next, _, {PagesTid, _} = State) ->
             {reply, nothing, State}
     end;
 
-handle_call({search, Word}, _, {PagesTid, IndexTid} = State) ->
-    case ets:lookup(IndexTid, Word) of
-        [] ->
-            {reply, [], State};
-        [#index{pages = Pages}] ->
-            {reply, lists:map(fun(PageId) ->
-                              [#page{url = URL}] = ets:lookup(PagesTid, PageId),
-                              URL
-                      end, Pages), State}
-    end;
+handle_call({search, Phrases}, _, {PagesTid, IndexTid} = State) ->
+    Words = string:tokens(Phrases, " "),
+    PageLists = [get_pages(Word, IndexTid) || Word <- Words],
+    Result = merge_page_lists(PageLists),
+    {reply, [get_url(Id, PagesTid) || Id <- Result], State};
 
 handle_call(_, _, State) ->
     {noreply, State}.
@@ -101,7 +96,46 @@ code_change(_OldVsn, State, _) ->
 update_word(IndexTid, Word, Id) ->
     case ets:lookup(IndexTid, Word) of
         [#index{pages = Pages}] ->
-            ets:insert(IndexTid, #index{word = Word, pages = [Id|Pages]});
+            ets:insert(IndexTid, #index{word = Word, pages = lists:sort([Id|Pages])});
         [] ->
             ets:insert(IndexTid, #index{word = Word, pages = [Id]})
     end.
+
+get_url(Id, PagesTid) ->
+    [#page{url = URL}] = ets:lookup(PagesTid, Id),
+    URL.
+
+get_pages(Word, IndexTid) ->
+    case ets:lookup(IndexTid, Word) of
+        [] ->
+            [];
+        [#index{pages = Pages}] ->
+            Pages
+    end.
+
+merge_page_lists([]) ->
+    [];
+
+merge_page_lists([List]) ->
+    List;
+
+merge_page_lists([List1, List2 | Rest]) ->
+    merge_page_lists([merge_two_page_lists(List1, List2) | Rest]).
+
+merge_two_page_lists(List1, List2) ->
+    lists:reverse(merge_two_page_lists(List1, List2, [])).
+
+merge_two_page_lists([], _, Res) ->
+    Res;
+
+merge_two_page_lists(_, [], Res) ->
+    Res;
+
+merge_two_page_lists([Page1 | List1], [Page2 | List2], Res) when Page1 < Page2 ->
+    merge_two_page_lists(List1, [Page2 | List2], Res);
+
+merge_two_page_lists([Page1 | List1], [Page2 | List2], Res) when Page1 > Page2 ->
+    merge_two_page_lists([Page1 | List1], List2, Res);
+
+merge_two_page_lists([Page | List1], [_ | List2], Res) ->
+    merge_two_page_lists(List1, List2, [Page | Res]).
