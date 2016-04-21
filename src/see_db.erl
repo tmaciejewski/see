@@ -16,7 +16,7 @@
          terminate/2,
          code_change/3]).
 
--record(page, {id, url, code, last_visit = erlang:timestamp()}).
+-record(page, {id, url, code, words, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
 
 start() ->
@@ -52,9 +52,10 @@ terminate(_, _) ->
 
 handle_cast({visited, URL, Code, Content}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
-    ets:insert(PagesTid, #page{id = Id, url = URL, code = Code}),
     Words = string:tokens(Content, " "),
-    lists:foreach(fun(Word) -> update_word(IndexTid, Word, Id) end, Words),
+    remove_from_index(IndexTid, PagesTid, Id),
+    ets:insert(PagesTid, #page{id = Id, url = URL, words = Words, code = Code}),
+    insert_to_index(IndexTid, Words, Id),
     {noreply, {PagesTid, IndexTid}};
 
 handle_cast({queue, URL}, {PagesTid, _} = State) ->
@@ -93,13 +94,34 @@ code_change(_OldVsn, State, _) ->
 
 %----------------------------------------------------------
 
-update_word(IndexTid, Word, Id) ->
+remove_from_index(IndexTid, PagesTid, Id) ->
+    case ets:lookup(PagesTid, Id) of
+        [] ->
+            ok;
+        [#page{words = Words}] ->
+            lists:foreach(fun(Word) -> remove_from_word(IndexTid, Word, Id) end, Words),
+            ets:delete(PagesTid, Id)
+    end.
+
+remove_from_word(IndexTid, Word, Id) ->
+    case ets:lookup(IndexTid, Word) of
+        [] ->
+            ok;
+        [#index{pages = Pages}] ->
+            ets:insert(IndexTid, #index{word = Word, pages = lists:delete(Id, Pages)})
+    end.
+
+insert_to_index(_, [], _) ->
+    ok;
+
+insert_to_index(IndexTid, [Word | Words], Id) ->
     case ets:lookup(IndexTid, Word) of
         [#index{pages = Pages}] ->
             ets:insert(IndexTid, #index{word = Word, pages = lists:sort([Id|Pages])});
         [] ->
             ets:insert(IndexTid, #index{word = Word, pages = [Id]})
-    end.
+    end,
+    insert_to_index(IndexTid, Words, Id).
 
 get_url(Id, PagesTid) ->
     [#page{url = URL}] = ets:lookup(PagesTid, Id),
