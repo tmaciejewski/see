@@ -29,7 +29,8 @@ visit(URL) ->
             MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
             case is_text(MIME) of
                 true ->
-                    see_db:visited(URL, Code, Content);
+                    Words = string:tokens(Content, " "),
+                    see_db:visited(URL, Code, Words);
                 false ->
                     see_db:visited(URL, binary, MIME)
             end;

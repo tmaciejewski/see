@@ -28,8 +28,8 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visited(URL, Code, Content) ->
-    gen_server:cast(?MODULE, {visited, URL, Code, Content}).
+visited(URL, Code, Words) ->
+    gen_server:cast(?MODULE, {visited, URL, Code, Words}).
 
 queue(URL) ->
     gen_server:cast(?MODULE, {queue, URL}).
@@ -50,9 +50,8 @@ init(_Args) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, Code, Content}, {PagesTid, IndexTid}) ->
+handle_cast({visited, URL, Code, Words}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
-    Words = string:tokens(Content, " "),
     remove_from_index(IndexTid, PagesTid, Id),
     ets:insert(PagesTid, #page{id = Id, url = URL, words = Words, code = Code}),
     insert_to_index(IndexTid, Words, Id),

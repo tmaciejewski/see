@@ -3,15 +3,15 @@
 
 -define(URL, "url").
 -define(CODE, 200).
--define(CONTENT, "aaa ddd eee fff").
+-define(WORDS, ["aaa", "ddd", "eee", "fff"]).
 
 -define(URL2, "url2").
 -define(CODE2, 200).
--define(CONTENT2, "bbb ddd eee ggg").
+-define(WORDS2, ["bbb", "ddd", "eee", "ggg"]).
 
 -define(URL3, "url3").
 -define(CODE3, 200).
--define(CONTENT3, "ccc ddd fff ggg").
+-define(WORDS3, ["ccc", "ddd", "fff", "ggg"]).
 
 -define(assert_search_result(URLs, Phrase),
         ?_assertEqual(lists:sort(URLs), lists:sort(see_db:search(Phrase)))).
@@ -31,27 +31,27 @@ queued_page() ->
 
 visited_page() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?CONTENT),
+    see_db:visited(?URL, ?CODE, ?WORDS),
     Pid.
 
 visited_many_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?CONTENT),
-    see_db:visited(?URL2, ?CODE2, ?CONTENT2),
-    see_db:visited(?URL3, ?CODE3, ?CONTENT3),
+    see_db:visited(?URL, ?CODE, ?WORDS),
+    see_db:visited(?URL2, ?CODE2, ?WORDS2),
+    see_db:visited(?URL3, ?CODE3, ?WORDS3),
     Pid.
 
 visited_many_same_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?CONTENT),
-    see_db:visited(?URL2, ?CODE, ?CONTENT),
-    see_db:visited(?URL3, ?CODE, ?CONTENT),
+    see_db:visited(?URL, ?CODE, ?WORDS),
+    see_db:visited(?URL2, ?CODE, ?WORDS),
+    see_db:visited(?URL3, ?CODE, ?WORDS),
     Pid.
 
 visited_page_has_changed() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?CONTENT),
-    see_db:visited(?URL, ?CODE, ?CONTENT2),
+    see_db:visited(?URL, ?CODE, ?WORDS),
+    see_db:visited(?URL, ?CODE, ?WORDS2),
     Pid.
 
 when_no_queued_pages__next_returns_nothing_test_() ->
@@ -81,15 +81,15 @@ when_word_is_not_present__search_returns_empty_list_test_() ->
 when_word_is_present_on_one_page__search_returns_single_page_list_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->
-             [?assert_search_result([?URL], Word) || Word <- string:tokens(?CONTENT, " ")]
+             [?assert_search_result([?URL], Word) || Word <- ?WORDS]
      end}.
 
 when_phrase_is_present_on_one_page__search_returns_single_page_list_test_() ->
     {setup, fun visited_many_pages/0, fun stop/1,
      fun(_) ->
-             [?assert_search_result([?URL], ?CONTENT),
-              ?assert_search_result([?URL2], ?CONTENT2),
-              ?assert_search_result([?URL3], ?CONTENT3)]
+             [?assert_search_result([?URL], string:join(?WORDS, " ")),
+              ?assert_search_result([?URL2], string:join(?WORDS2, " ")),
+              ?assert_search_result([?URL3], string:join(?WORDS3, " "))]
      end}.
 
 when_word_is_present_on_many_pages__search_returns_them_all_test_() ->
