@@ -4,7 +4,7 @@
 -export([start/0,
          start_link/0,
          stop/0,
-         visited/3,
+         visited/2,
          queue/1,
          next/0,
          search/1]).
@@ -16,7 +16,7 @@
          terminate/2,
          code_change/3]).
 
--record(page, {id, url, code, words, last_visit = erlang:timestamp()}).
+-record(page, {id, url, words, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
 
 start() ->
@@ -28,8 +28,8 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visited(URL, Code, Words) ->
-    gen_server:cast(?MODULE, {visited, URL, Code, Words}).
+visited(URL, Words) ->
+    gen_server:cast(?MODULE, {visited, URL, Words}).
 
 queue(URL) ->
     gen_server:cast(?MODULE, {queue, URL}).
@@ -50,16 +50,28 @@ init(_Args) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, Code, Words}, {PagesTid, IndexTid}) ->
+handle_cast({visited, URL, {error, Reason}}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
     remove_from_index(IndexTid, PagesTid, Id),
-    ets:insert(PagesTid, #page{id = Id, url = URL, words = Words, code = Code}),
+    ets:insert(PagesTid, #page{id = Id, url = URL, words = {error, Reason}}),
+    {noreply, {PagesTid, IndexTid}};
+
+handle_cast({visited, URL, binary}, {PagesTid, IndexTid}) ->
+    Id = erlang:phash2(URL),
+    remove_from_index(IndexTid, PagesTid, Id),
+    ets:insert(PagesTid, #page{id = Id, url = URL, words = binary}),
+    {noreply, {PagesTid, IndexTid}};
+
+handle_cast({visited, URL, Words}, {PagesTid, IndexTid}) ->
+    Id = erlang:phash2(URL),
+    remove_from_index(IndexTid, PagesTid, Id),
+    ets:insert(PagesTid, #page{id = Id, url = URL, words = Words}),
     insert_to_index(IndexTid, Words, Id),
     {noreply, {PagesTid, IndexTid}};
 
 handle_cast({queue, URL}, {PagesTid, _} = State) ->
     Id = erlang:phash2(URL),
-    ets:insert(PagesTid, #page{id = Id, url = URL, code = null, last_visit = null}),
+    ets:insert(PagesTid, #page{id = Id, url = URL, last_visit = null}),
     {noreply, State};
 
 handle_cast(_, State) ->
@@ -95,11 +107,11 @@ code_change(_OldVsn, State, _) ->
 
 remove_from_index(IndexTid, PagesTid, Id) ->
     case ets:lookup(PagesTid, Id) of
-        [] ->
-            ok;
-        [#page{words = Words}] ->
+        [#page{words = Words}] when is_list(Words) ->
             lists:foreach(fun(Word) -> remove_from_word(IndexTid, Word, Id) end, Words),
-            ets:delete(PagesTid, Id)
+            ets:delete(PagesTid, Id);
+        [] ->
+            ok
     end.
 
 remove_from_word(IndexTid, Word, Id) ->

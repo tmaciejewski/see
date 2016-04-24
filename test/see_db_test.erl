@@ -2,15 +2,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "url").
--define(CODE, 200).
 -define(WORDS, ["aaa", "ddd", "eee", "fff"]).
 
 -define(URL2, "url2").
--define(CODE2, 200).
 -define(WORDS2, ["bbb", "ddd", "eee", "ggg"]).
 
 -define(URL3, "url3").
--define(CODE3, 200).
 -define(WORDS3, ["ccc", "ddd", "fff", "ggg"]).
 
 -define(assert_search_result(URLs, Phrase),
@@ -31,27 +28,27 @@ queued_page() ->
 
 visited_page() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?WORDS),
+    see_db:visited(?URL, ?WORDS),
     Pid.
 
 visited_many_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?WORDS),
-    see_db:visited(?URL2, ?CODE2, ?WORDS2),
-    see_db:visited(?URL3, ?CODE3, ?WORDS3),
+    see_db:visited(?URL, ?WORDS),
+    see_db:visited(?URL2, ?WORDS2),
+    see_db:visited(?URL3, ?WORDS3),
     Pid.
 
 visited_many_same_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?WORDS),
-    see_db:visited(?URL2, ?CODE, ?WORDS),
-    see_db:visited(?URL3, ?CODE, ?WORDS),
+    see_db:visited(?URL, ?WORDS),
+    see_db:visited(?URL2, ?WORDS),
+    see_db:visited(?URL3, ?WORDS),
     Pid.
 
 visited_page_has_changed() ->
     Pid = start(),
-    see_db:visited(?URL, ?CODE, ?WORDS),
-    see_db:visited(?URL, ?CODE, ?WORDS2),
+    see_db:visited(?URL, ?WORDS),
+    see_db:visited(?URL, ?WORDS2),
     Pid.
 
 when_no_queued_pages__next_returns_nothing_test_() ->

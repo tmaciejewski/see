@@ -25,19 +25,18 @@ visit("http://" ++ URL) ->
 
 visit(URL) ->
     case httpc:request("http://" ++ URL) of
-        {ok, {{_, Code, _}, Headers, Content}} ->
-            MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
-            case is_text(MIME) of
+        {ok, Page} ->
+            case see_html:is_text(Page) of
                 true ->
-                    Words = string:tokens(Content, " "),
-                    see_db:visited(URL, Code, Words);
+                    Words = see_html:words(Page),
+                    see_db:visited(URL, Words);
                 false ->
-                    see_db:visited(URL, binary, MIME)
+                    see_db:visited(URL, binary)
             end;
 
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
-            see_db:visited(URL, error, Reason)
+            see_db:visited(URL, {error, Reason})
     end.
 
 %----------------------------------------------------------
@@ -54,9 +53,6 @@ handle_info(timeout, State) ->
             {noreply, State, ?SLEEP_TIMEOUT}
    end.
 
-is_text("text/html") -> true;
-is_text("text/plain") -> true;
-is_text(_) -> false.
 
 handle_call(_, _, State) ->
     {reply, ok, State}.

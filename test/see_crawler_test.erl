@@ -34,7 +34,7 @@ when_next_url_is_error__call_visited_with_undefined__test_() ->
      fun(Pid) ->
              meck:expect(httpc, request, [{[?RequestURL], {error, test}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, error, test], ok}]),
+             meck:expect(see_db, visited, [{[?URL, {error, test}], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
@@ -50,7 +50,7 @@ when_next_url_is_binary__call_visited_with_binary__test_() ->
 
              meck:expect(httpc, request, [{[?RequestURL], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, binary, MIME], ok}]),
+             meck:expect(see_db, visited, [{[?URL, binary], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
@@ -66,7 +66,7 @@ when_next_url_is_text__call_visited_with_content__test_() ->
 
              meck:expect(httpc, request, [{[?RequestURL], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, Code, Words], ok}]),
+             meck:expect(see_db, visited, [{[?URL, Words], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
