@@ -4,18 +4,16 @@
          words/1,
          links/2]).
 
-is_text({{_, _, _}, Headers, _}) ->
+-define(TEXT_MIME, ["text/html", "text/plain"]).
+
+is_text(Headers) ->
     MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
-    is_text(MIME);
+    lists:member(MIME, ?TEXT_MIME).
 
-is_text("text/html") -> true;
-is_text("text/plain") -> true;
-is_text(_) -> false.
-
-words({{_, _, _}, _, Content}) ->
+words(Content) ->
     string:tokens(Content, " ").
 
-links(URL, {{_, _, _}, _, Content}) ->
+links(URL, Content) ->
     case  re:run(Content, "<a *href=\"([^\"# ]*)", 
                  [global, {capture, [1], list}]) of
         {match, Match} ->

@@ -2,8 +2,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0,
-         stop/1,
-         visit/1]).
+         stop/1]).
 
 -export([init/1,
          handle_call/3,
@@ -19,25 +18,6 @@ start_link() ->
 
 stop(Pid) ->
     gen_server:cast(Pid, stop).
-
-visit("http://" ++ URL) ->
-    visit(URL);
-
-visit(URL) ->
-    case httpc:request("http://" ++ URL) of
-        {ok, Page} ->
-            case see_html:is_text(Page) of
-                true ->
-                    Words = see_html:words(Page),
-                    see_db:visited(URL, Words);
-                false ->
-                    see_db:visited(URL, binary)
-            end;
-
-        {error, Reason} ->
-            error_logger:error_report([{url, URL}, {error, Reason}]),
-            see_db:visited(URL, {error, Reason})
-    end.
 
 %----------------------------------------------------------
 
@@ -65,3 +45,25 @@ terminate(_, _) ->
     
 code_change(_OldVsn, State, _) ->
     {ok, State}.
+
+%----------------------------------------------------------
+
+visit("http://" ++ URL) ->
+    visit(URL);
+
+visit(URL) ->
+    case httpc:request("http://" ++ URL) of
+        {ok, {{_, _Code, _}, Headers, Content}} ->
+            case see_html:is_text(Headers) of
+                true ->
+                    Words = see_html:words(Content),
+                    see_db:visited(URL, Words);
+                false ->
+                    see_db:visited(URL, binary)
+            end;
+
+        {error, Reason} ->
+            error_logger:error_report([{url, URL}, {error, Reason}]),
+            see_db:visited(URL, {error, Reason})
+    end.
+
