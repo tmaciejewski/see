@@ -57,7 +57,9 @@ visit(URL) ->
             case see_html:is_text(Headers) of
                 true ->
                     Words = see_html:words(Content),
-                    see_db:visited(URL, Words);
+                    Links = see_html:links(URL, Content),
+                    see_db:visited(URL, Words),
+                    lists:foreach(fun see_db:queue/1, Links);
                 false ->
                     see_db:visited(URL, binary)
             end;
