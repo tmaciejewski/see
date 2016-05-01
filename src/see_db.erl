@@ -31,6 +31,9 @@ stop() ->
 visited(URL, Words) ->
     gen_server:cast(?MODULE, {visited, URL, Words}).
 
+queue("http://" ++ URL) ->
+    queue(URL);
+
 queue(URL) ->
     gen_server:cast(?MODULE, {queue, URL}).
 
@@ -83,7 +86,7 @@ handle_call(stop, _, State) ->
 handle_call(next, _, {PagesTid, _} = State) ->
     case ets:match(PagesTid, #page{last_visit = null, url = '$1', _ = '_'}, 1) of
         {[[URL]], _} ->
-            {reply, URL, State};
+            {reply, {ok, URL}, State};
         _ ->
             {reply, nothing, State}
     end;
@@ -110,7 +113,7 @@ remove_from_index(IndexTid, PagesTid, Id) ->
         [#page{words = Words}] when is_list(Words) ->
             lists:foreach(fun(Word) -> remove_from_word(IndexTid, Word, Id) end, Words),
             ets:delete(PagesTid, Id);
-        [] ->
+        _Other ->
             ok
     end.
 

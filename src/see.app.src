@@ -1,12 +1,27 @@
 {application, see,
  [
+  {id, "see"},
   {description, "Search Engine in Erlang"},
   {vsn, "1"},
-  {registered, []},
+  {modules, [
+      see,
+      see_app,
+      see_crawler,
+      see_crawler_sup,
+      see_db,
+      see_html,
+      see_sup
+  ]},
+  {registered, [
+      see_crawler_sup,
+      see_sup,
+      see_db
+  ]},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  inets
                  ]},
-  {mod, { see_app, []}},
+  {mod, {see_app, []}},
   {env, []}
  ]}.

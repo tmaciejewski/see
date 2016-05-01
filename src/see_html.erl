@@ -7,7 +7,7 @@
 -define(TEXT_MIME, ["text/html", "text/plain"]).
 
 is_text(Headers) ->
-    MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
+    MIME = proplists:get_value("content-type", Headers),
     lists:member(MIME, ?TEXT_MIME).
 
 words(Content) ->

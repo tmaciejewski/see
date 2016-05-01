@@ -35,7 +35,7 @@ when_no_next_url__do_nothing__test_() ->
 when_next_url_is_error__call_visited_with_undefined__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
-             meck:expect(httpc, request, [{[?RequestURL], {error, test}}]),
+             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {error, test}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db, visited, [{[?URL, {error, test}], ok}]),
              trigger_timeout(Pid),
@@ -50,7 +50,7 @@ when_next_url_is_binary__call_visited_with_binary__test_() ->
              Code = 200,
              Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
 
-             meck:expect(httpc, request, [{[?RequestURL], {ok, Page}}]),
+             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db, visited, [{[?URL, binary], ok}]),
              meck:expect(see_html, is_text, [{[Headers], false}]),
@@ -68,7 +68,7 @@ when_next_url_is_text__call_visited_with_content__test_() ->
              Code = 200,
              Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
 
-             meck:expect(httpc, request, [{[?RequestURL], {ok, Page}}]),
+             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_html, is_text, [{[Headers], true}]),
              meck:expect(see_html, words, [{[Content], Words}]),
