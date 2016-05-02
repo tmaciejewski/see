@@ -65,6 +65,12 @@ handle_cast({visited, URL, binary}, {PagesTid, IndexTid}) ->
     ets:insert(PagesTid, #page{id = Id, url = URL, words = binary}),
     {noreply, {PagesTid, IndexTid}};
 
+handle_cast({visited, URL, {redirect, RedirectURL}}, {PagesTid, IndexTid}) ->
+    Id = erlang:phash2(URL),
+    remove_from_index(IndexTid, PagesTid, Id),
+    ets:insert(PagesTid, #page{id = Id, url = URL, words = {redirect, RedirectURL}}),
+    {noreply, {PagesTid, IndexTid}};
+
 handle_cast({visited, URL, Words}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
     remove_from_index(IndexTid, PagesTid, Id),

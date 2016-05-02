@@ -60,14 +60,24 @@ when_no_queued_pages__next_returns_nothing_test_() ->
 when_queued_page__next_returns_its_url_test_() ->
     {setup, fun queued_page/0, fun stop/1,
      fun(_) ->
-             ?_assertEqual({ok, ?URL}, see_db:next())
+             [?_assertEqual({ok, ?URL}, see_db:next()),
+              ?_assertEqual({ok, ?URL}, see_db:next())]
      end}.
 
 when_all_pages_visited__next_returns_nothing_test_() ->
-    {setup, fun visited_page/0, fun stop/1,
-     fun(_) ->
-             ?_assertEqual(nothing, see_db:next())
-     end}.
+    {foreach, fun queued_page/0, fun stop/1,
+     [fun(_) ->
+              see_db:visited(?URL, ?WORDS),
+              ?_assertEqual(nothing, see_db:next())
+      end,
+      fun(_) ->
+              see_db:visited(?URL, {redirect, "redirect url"}),
+              ?_assertEqual(nothing, see_db:next())
+      end,
+      fun(_) ->
+              see_db:visited(?URL, binary),
+              ?_assertEqual(nothing, see_db:next())
+      end]}.
 
 when_word_is_not_present__search_returns_empty_list_test_() ->
     {setup, fun visited_page/0, fun stop/1,

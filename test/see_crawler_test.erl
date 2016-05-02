@@ -2,7 +2,9 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "foo.com").
--define(RequestURL, "http://foo.com").
+-define(REQUESTED_URL, "http://foo.com").
+-define(CONTENT, "page content").
+-define(CONTENT_WORDS, "page word").
 
 trigger_timeout(Pid) ->
     Pid ! timeout.
@@ -35,7 +37,7 @@ when_no_next_url__do_nothing__test_() ->
 when_next_url_is_error__call_visited_with_undefined__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
-             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {error, test}}]),
+             meck:expect(httpc, request, [{[get, {?REQUESTED_URL, []}, [{autoredirect, false}], []], {error, test}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db, visited, [{[?URL, {error, test}], ok}]),
              trigger_timeout(Pid),
@@ -46,11 +48,9 @@ when_next_url_is_binary__call_visited_with_binary__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
              Headers = [{"content-type", "application/octet-stream"}],
-             Content = "content",
-             Code = 200,
-             Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
+             Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
-             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             meck:expect(httpc, request, [{[get, {?REQUESTED_URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db, visited, [{[?URL, binary], ok}]),
              meck:expect(see_html, is_text, [{[Headers], false}]),
@@ -62,19 +62,31 @@ when_next_url_is_text__call_visited_with_content__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
              Headers = [{"content-type", "text/plain"}],
-             Content = "page content",
-             Words = string:tokens(Content, " "),
              Links = ["link1", "link2"],
-             Code = 200,
-             Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
+             Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
-             meck:expect(httpc, request, [{[get, {?RequestURL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             meck:expect(httpc, request, [{[get, {?REQUESTED_URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
              meck:expect(see_db, next, [{[], {ok, ?URL}}]),
              meck:expect(see_html, is_text, [{[Headers], true}]),
-             meck:expect(see_html, words, [{[Content], Words}]),
-             meck:expect(see_html, links, [{[?URL, Content], Links}]),
-             meck:expect(see_db, visited, [{[?URL, Words], ok}]),
+             meck:expect(see_html, words, [{[?CONTENT], ?CONTENT_WORDS}]),
+             meck:expect(see_html, links, [{[?URL, ?CONTENT], Links}]),
+             meck:expect(see_db, visited, [{[?URL, ?CONTENT_WORDS], ok}]),
              meck:expect(see_db, queue, [{["link1"], ok}, {["link2"], ok}]),
+             trigger_timeout(Pid),
+             ?_assert(is_pid(Pid))
+     end}.
+
+when_next_url_is_redirect__call_visited_with_redirect_url__test_() ->
+    {setup, fun start_crawler/0, fun stop_crawler/1,
+     fun(Pid) ->
+             RedirectURL = "redirect url",
+             Headers = [{"location", RedirectURL}],
+             Page = {{"HTTP/1.1", 301, "OK"}, Headers, []},
+
+             meck:expect(httpc, request, [{[get, {?REQUESTED_URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db, visited, [{[?URL, {redirect, RedirectURL}], ok}]),
+             meck:expect(see_db, queue, [{[RedirectURL], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.

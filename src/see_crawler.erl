@@ -2,8 +2,6 @@
 -behaviour(gen_server).
 
 -export([start_link/0,
-         visit/1,
-         get_url/1,
          stop/1]).
 
 -export([init/1,
@@ -14,6 +12,10 @@
          code_change/3]).
 
 -define(SLEEP_TIMEOUT, 3000).
+
+-define(CODE_OK, 200).
+-define(CODE_MOVED, 301).
+-define(CODE_FOUND, 302).
 
 start_link() ->
     gen_server:start_link(?MODULE, [], []).
@@ -54,16 +56,20 @@ code_change(_OldVsn, State, _) ->
 
 get_url(URL) ->
     case httpc:request(get, {URL, []}, [{autoredirect, false}], []) of
-        {ok, {{_, _Code, _}, Headers, Content}} ->
+        {ok, {{_, ?CODE_OK, _}, Headers, Content}} ->
             case see_html:is_text(Headers) of
                 true ->
                     {ok, Content};
                 false ->
                     binary
             end;
+        {ok, {{_, ?CODE_MOVED, _}, Headers, _}} ->
+            {redirect, proplists:get_value("location", Headers)};
         {error, Reason} ->
             {error, Reason}
     end.
+
+
 
 visit("http://" ++ URL) ->
     visit(URL);
@@ -77,6 +83,8 @@ visit(URL) ->
             lists:foreach(fun see_db:queue/1, Links);
         binary ->
             see_db:visited(URL, binary);
+        {redirect, RedirectURL} ->
+            see_db:queue(RedirectURL);
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
             see_db:visited(URL, {error, Reason})
