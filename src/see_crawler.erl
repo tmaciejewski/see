@@ -65,17 +65,16 @@ get_url(URL) ->
             end;
         {ok, {{_, ?CODE_MOVED, _}, Headers, _}} ->
             {redirect, proplists:get_value("location", Headers)};
+        {ok, {{_, ?CODE_FOUND, _}, Headers, _}} ->
+            {redirect, proplists:get_value("location", Headers)};
+        {ok, {{_, Code, _}, Headers, Content}} ->
+            {error, {Code, Headers, Content}};
         {error, Reason} ->
             {error, Reason}
     end.
 
-
-
-visit("http://" ++ URL) ->
-    visit(URL);
-
 visit(URL) ->
-    case get_url("http://" ++ URL) of
+    case get_url(URL) of
         {ok, Content} ->
             Words = see_html:words(Content),
             Links = see_html:links(URL, Content),
@@ -84,9 +83,9 @@ visit(URL) ->
         binary ->
             see_db:visited(URL, binary);
         {redirect, RedirectURL} ->
+            see_db:visited(URL, {redirect, RedirectURL}),
             see_db:queue(RedirectURL);
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
             see_db:visited(URL, {error, Reason})
     end.
-

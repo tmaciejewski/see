@@ -31,9 +31,6 @@ stop() ->
 visited(URL, Words) ->
     gen_server:cast(?MODULE, {visited, URL, Words}).
 
-queue("http://" ++ URL) ->
-    queue(URL);
-
 queue(URL) ->
     gen_server:cast(?MODULE, {queue, URL}).
 
