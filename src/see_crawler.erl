@@ -78,11 +78,13 @@ visit(URL) ->
         {ok, Content} ->
             Words = see_html:words(Content),
             Links = see_html:links(URL, Content),
+            error_logger:info_report([{url, URL}, {links, length(Links)}]),
             see_db:visited(URL, Words),
             lists:foreach(fun see_db:queue/1, Links);
         binary ->
             see_db:visited(URL, binary);
         {redirect, RedirectURL} ->
+            error_logger:info_report([{url, URL}, {redirect, RedirectURL}]),
             see_db:visited(URL, {redirect, RedirectURL}),
             see_db:queue(RedirectURL);
         {error, Reason} ->

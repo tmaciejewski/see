@@ -79,6 +79,13 @@ when_all_pages_visited__next_returns_nothing_test_() ->
               ?_assertEqual(nothing, see_db:next())
       end]}.
 
+when_page_is_visited__it_cannot_be_queued_again_test_() ->
+    {setup, fun visited_page/0, fun stop/1,
+     fun(_) ->
+             see_db:queue(?URL), 
+             ?_assertEqual(nothing, see_db:next())
+     end}.
+
 when_word_is_not_present__search_returns_empty_list_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->

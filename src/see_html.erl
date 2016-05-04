@@ -26,7 +26,7 @@ links(URL, Content) ->
 absLink(URL, "/" ++ Link) ->
     case http_uri:parse(URL) of
         {ok, {_, _, Host, _, _, _}} ->
-            string:join([Host, Link], "/");
+            "http://" ++ string:join([Host, Link], "/");
         _ ->
             ""
     end;

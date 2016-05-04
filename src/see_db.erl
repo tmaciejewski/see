@@ -77,7 +77,12 @@ handle_cast({visited, URL, Words}, {PagesTid, IndexTid}) ->
 
 handle_cast({queue, URL}, {PagesTid, _} = State) ->
     Id = erlang:phash2(URL),
-    ets:insert(PagesTid, #page{id = Id, url = URL, last_visit = null}),
+    case ets:lookup(PagesTid, Id) of
+        [] ->
+            ets:insert(PagesTid, #page{id = Id, url = URL, last_visit = null});
+        _ ->
+            ok
+    end,
     {noreply, State};
 
 handle_cast(_, State) ->
