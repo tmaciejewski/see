@@ -1,7 +1,4 @@
 ebin
 *.swp
-Mnesia.*
-TODO*
-*.dump
-.eunit
-.rebar
+_build
+rebar.lock
