@@ -119,8 +119,7 @@ code_change(_OldVsn, State, _) ->
 remove_from_index(IndexTid, PagesTid, Id) ->
     case ets:lookup(PagesTid, Id) of
         [#page{words = Words}] when is_list(Words) ->
-            lists:foreach(fun(Word) -> remove_from_word(IndexTid, Word, Id) end, Words),
-            ets:delete(PagesTid, Id);
+            lists:foreach(fun(Word) -> remove_from_word(IndexTid, Word, Id) end, Words);
         _Other ->
             ok
     end.
