@@ -2,17 +2,13 @@ Hello
 -----
 
 SEE (or see, whatever) is a simple search engine written in Erlang. So
-far it can crawl through web indexing new pages into Mnesia database.
-
-It uses OTP supervisor to create web crawlers as workers. Before that
-the database must be initialized.
+far it can crawl through web indexing new pages into ets table.
 
 Example session
 ---------------
 
 Initializing search engine:
 
-> application:start(mnesia).
 > application:start(inets).
 > application:start(see).
 
