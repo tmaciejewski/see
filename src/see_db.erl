@@ -130,7 +130,7 @@ remove_from_word(IndexTid, Word, Id) ->
         [] ->
             ok;
         [#index{pages = Pages}] ->
-            ets:insert(IndexTid, #index{word = Word, pages = lists:delete(Id, Pages)})
+            ets:insert(IndexTid, #index{word = Word, pages = sets:del_element(Id, Pages)})
     end.
 
 insert_to_index(_, [], _) ->
@@ -139,9 +139,9 @@ insert_to_index(_, [], _) ->
 insert_to_index(IndexTid, [Word | Words], Id) ->
     case ets:lookup(IndexTid, Word) of
         [#index{pages = Pages}] ->
-            ets:insert(IndexTid, #index{word = Word, pages = lists:sort([Id|Pages])});
+            ets:insert(IndexTid, #index{word = Word, pages = sets:add_element(Id, Pages)});
         [] ->
-            ets:insert(IndexTid, #index{word = Word, pages = [Id]})
+            ets:insert(IndexTid, #index{word = Word, pages = sets:from_list([Id])})
     end,
     insert_to_index(IndexTid, Words, Id).
 
@@ -152,7 +152,7 @@ get_url(Id, PagesTid) ->
 get_pages(Word, IndexTid) ->
     case ets:lookup(IndexTid, Word) of
         [] ->
-            [];
+            sets:new();
         [#index{pages = Pages}] ->
             Pages
     end.
@@ -160,26 +160,6 @@ get_pages(Word, IndexTid) ->
 merge_page_lists([]) ->
     [];
 
-merge_page_lists([List]) ->
-    List;
+merge_page_lists(PageLists) ->
+    sets:to_list(sets:intersection(PageLists)).
 
-merge_page_lists([List1, List2 | Rest]) ->
-    merge_page_lists([merge_two_page_lists(List1, List2) | Rest]).
-
-merge_two_page_lists(List1, List2) ->
-    lists:reverse(merge_two_page_lists(List1, List2, [])).
-
-merge_two_page_lists([], _, Res) ->
-    Res;
-
-merge_two_page_lists(_, [], Res) ->
-    Res;
-
-merge_two_page_lists([Page1 | List1], [Page2 | List2], Res) when Page1 < Page2 ->
-    merge_two_page_lists(List1, [Page2 | List2], Res);
-
-merge_two_page_lists([Page1 | List1], [Page2 | List2], Res) when Page1 > Page2 ->
-    merge_two_page_lists([Page1 | List1], List2, Res);
-
-merge_two_page_lists([Page | List1], [_ | List2], Res) ->
-    merge_two_page_lists(List1, List2, [Page | Res]).
