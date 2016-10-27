@@ -1,25 +1,19 @@
 -module(see_crawler_sup).
 -behaviour(supervisor).
 
--export([start_link/0,
-         stop/0,
-         add/1,
-         add/2]).
+-export([start_link/2,
+         add/1]).
 
 -export([init/1]).
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
-
-stop() ->
-    ok.
-
-add(_, 0) ->
-    ok;
-
-add(DbNode, N) ->
-    add(DbNode),
-    add(DbNode, N - 1).
+start_link(CrawlerNum, DbNode) ->
+    case supervisor:start_link({local, ?MODULE}, ?MODULE, []) of
+        {ok, Pid} ->
+            lists:foreach(fun(_) -> add(DbNode) end, lists:seq(1, CrawlerNum)),
+            {ok, Pid};
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 add(DbNode) ->
     supervisor:start_child(?MODULE, [DbNode]).
