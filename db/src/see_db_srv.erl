@@ -1,4 +1,4 @@
--module(see_db).
+-module(see_db_srv).
 -behaviour(gen_server).
 
 -export([start/0,
@@ -43,8 +43,8 @@ search(Phrases) ->
 %----------------------------------------------------------
 
 init(_Args) ->
-    PagesTid = ets:new(pages, [{keypos, #page.id}]),
-    IndexTid = ets:new(index, [{keypos, #index.word}]),
+    PagesTid = ets:new(see_pages, [{keypos, #page.id}]),
+    IndexTid = ets:new(see_index, [{keypos, #index.word}]),
     {ok, {PagesTid, IndexTid}}.
 
 terminate(_, _) ->

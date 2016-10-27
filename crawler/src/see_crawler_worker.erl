@@ -1,7 +1,7 @@
--module(see_crawler).
+-module(see_crawler_worker).
 -behaviour(gen_server).
 
--export([start_link/0,
+-export([start_link/1,
          stop/1]).
 
 -export([init/1,
@@ -17,8 +17,8 @@
 -define(CODE_MOVED, 301).
 -define(CODE_FOUND, 302).
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(DbNode) ->
+    gen_server:start_link(?MODULE, DbNode, []).
 
 stop(Pid) ->
     gen_server:cast(Pid, stop).
@@ -28,29 +28,32 @@ stop(Pid) ->
 init(Args) ->
     {ok, Args, ?SLEEP_TIMEOUT}.
 
-handle_info(timeout, State) ->
-    case see_db:next() of
+handle_info(timeout, DbNode) ->
+    case rpc:call(DbNode, see_db_srv, next, []) of
         nothing ->
             error_logger:info_msg("Nothing to do"),
-            {noreply, State, ?SLEEP_TIMEOUT};
+            {noreply, DbNode, ?SLEEP_TIMEOUT};
         {ok, Next} ->
             error_logger:info_msg("Visiting " ++ Next),
-            visit(Next),
-            {noreply, State, ?SLEEP_TIMEOUT}
+            visit(DbNode, Next),
+            {noreply, DbNode, ?SLEEP_TIMEOUT};
+        {badrpc, Reason} ->
+            error_logger:error_report({badrpc, Reason}),
+            {noreply, DbNode, ?SLEEP_TIMEOUT}
    end.
 
 
-handle_call(_, _, State) ->
-    {reply, ok, State}.
+handle_call(_, _, DbNode) ->
+    {reply, ok, DbNode}.
 
-handle_cast(stop, State) ->
-    {stop, normal, State}.
+handle_cast(stop, DbNode) ->
+    {stop, normal, DbNode}.
 
 terminate(_, _) ->
     ok.
     
-code_change(_OldVsn, State, _) ->
-    {ok, State}.
+code_change(_OldVsn, DbNode, _) ->
+    {ok, DbNode}.
 
 %----------------------------------------------------------
 
@@ -73,21 +76,21 @@ get_url(URL) ->
             {error, Reason}
     end.
 
-visit(URL) ->
+visit(DbNode, URL) ->
     case get_url(URL) of
         {ok, Content} ->
             Words = see_html:words(Content),
             Links = see_html:links(URL, Content),
             error_logger:info_report([{url, URL}, {links, length(Links)}]),
-            see_db:visited(URL, Words),
-            lists:foreach(fun see_db:queue/1, Links);
+            rpc:cast(DbNode, see_db_srv, visited, [URL, Words]),
+            lists:foreach(fun(Link) -> rpc:cast(DbNode, see_db_srv, queue, [Link]) end, Links);
         binary ->
-            see_db:visited(URL, binary);
+            rpc:cast(DbNode, see_db_srv, visited, [URL, binary]);
         {redirect, RedirectURL} ->
             error_logger:info_report([{url, URL}, {redirect, RedirectURL}]),
-            see_db:visited(URL, {redirect, RedirectURL}),
-            see_db:queue(RedirectURL);
+            rpc:cast(DbNode, see_db_srv, visited, [URL, {redirect, RedirectURL}]),
+            rpc:cast(DbNode, see_db_srv, queue, [RedirectURL]);
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
-            see_db:visited(URL, {error, Reason})
+            rpc:cast(DbNode, see_db_srv, visited, [URL, {error, Reason}])
     end.

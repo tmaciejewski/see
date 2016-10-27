@@ -1,4 +1,4 @@
--module(see_db_test).
+-module(see_db_srv_test).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "url").
@@ -11,79 +11,79 @@
 -define(WORDS3, ["ccc", "ddd", "fff", "ggg"]).
 
 -define(assert_search_result(URLs, Phrase),
-        ?_assertEqual(lists:sort(URLs), lists:sort(see_db:search(Phrase)))).
+        ?_assertEqual(lists:sort(URLs), lists:sort(see_db_srv:search(Phrase)))).
 
 start() ->
-    {ok, Pid} = see_db:start(),
+    {ok, Pid} = see_db_srv:start(),
     ?assert(is_pid(Pid)),
     Pid.
 
 stop(_) ->
-    see_db:stop().
+    see_db_srv:stop().
 
 queued_page() ->
     Pid = start(),
-    see_db:queue(?URL),
+    see_db_srv:queue(?URL),
     Pid.
 
 visited_page() ->
     Pid = start(),
-    see_db:visited(?URL, ?WORDS),
+    see_db_srv:visited(?URL, ?WORDS),
     Pid.
 
 visited_many_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?WORDS),
-    see_db:visited(?URL2, ?WORDS2),
-    see_db:visited(?URL3, ?WORDS3),
+    see_db_srv:visited(?URL, ?WORDS),
+    see_db_srv:visited(?URL2, ?WORDS2),
+    see_db_srv:visited(?URL3, ?WORDS3),
     Pid.
 
 visited_many_same_pages() ->
     Pid = start(),
-    see_db:visited(?URL, ?WORDS),
-    see_db:visited(?URL2, ?WORDS),
-    see_db:visited(?URL3, ?WORDS),
+    see_db_srv:visited(?URL, ?WORDS),
+    see_db_srv:visited(?URL2, ?WORDS),
+    see_db_srv:visited(?URL3, ?WORDS),
     Pid.
 
 visited_page_has_changed() ->
     Pid = start(),
-    see_db:visited(?URL, ?WORDS),
-    see_db:visited(?URL, ?WORDS2),
+    see_db_srv:visited(?URL, ?WORDS),
+    see_db_srv:visited(?URL, ?WORDS2),
     Pid.
 
 when_no_queued_pages__next_returns_nothing_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             ?_assertEqual(nothing, see_db:next())
+             ?_assertEqual(nothing, see_db_srv:next())
      end}.
 
 when_queued_page__next_returns_its_url_test_() ->
     {setup, fun queued_page/0, fun stop/1,
      fun(_) ->
-             [?_assertEqual({ok, ?URL}, see_db:next()),
-              ?_assertEqual({ok, ?URL}, see_db:next())]
+             [?_assertEqual({ok, ?URL}, see_db_srv:next()),
+              ?_assertEqual({ok, ?URL}, see_db_srv:next())]
      end}.
 
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
      [fun(_) ->
-              see_db:visited(?URL, ?WORDS),
-              ?_assertEqual(nothing, see_db:next())
+              see_db_srv:visited(?URL, ?WORDS),
+              ?_assertEqual(nothing, see_db_srv:next())
       end,
       fun(_) ->
-              see_db:visited(?URL, {redirect, "redirect url"}),
-              ?_assertEqual(nothing, see_db:next())
+              see_db_srv:visited(?URL, {redirect, "redirect url"}),
+              ?_assertEqual(nothing, see_db_srv:next())
       end,
       fun(_) ->
-              see_db:visited(?URL, binary),
-              ?_assertEqual(nothing, see_db:next())
+              see_db_srv:visited(?URL, binary),
+              ?_assertEqual(nothing, see_db_srv:next())
       end]}.
 
 when_page_is_visited__it_cannot_be_queued_again_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->
-             see_db:queue(?URL), 
-             ?_assertEqual(nothing, see_db:next())
+             see_db_srv:queue(?URL), 
+             ?_assertEqual(nothing, see_db_srv:next())
      end}.
 
 when_word_is_not_present__search_returns_empty_list_test_() ->

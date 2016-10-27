@@ -1,4 +1,4 @@
--module(see_crawler_test).
+-module(see_crawler_worker_test).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "http://foo.com").
@@ -9,10 +9,10 @@ trigger_timeout(Pid) ->
     Pid ! timeout.
 
 start_crawler() ->
-    meck:new(see_db),
+    meck:new(see_db, [non_strict]),
     meck:new(httpc),
     meck:new(see_html),
-    {ok, Pid} = see_crawler:start_link(),
+    {ok, Pid} = see_crawler_worker:start_link(),
     ?assert(is_pid(Pid)),
     Pid.
 
@@ -23,7 +23,7 @@ stop_crawler(Pid) ->
     meck:unload(see_db),
     meck:unload(httpc),
     meck:unload(see_html),
-    see_crawler:stop(Pid).
+    see_crawler_worker:stop(Pid).
 
 when_no_next_url__do_nothing__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
