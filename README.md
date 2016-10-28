@@ -7,7 +7,7 @@ into two applications:
 * `see_db` managing search index. There could be only one node running this application
 * `see_crawler` responsible for crawling the web. There may be many nodes runnign this application.
 
-# Starting see_db node
+## Starting see_db node
 
 ```bash
 cd db
@@ -15,7 +15,7 @@ rebar compile
 erl -sname db -pa ebin -run see_db start
 ```
 
-# Starting see_crawler node
+## Starting see_crawler node
 
 ```bash
 cd crawler
@@ -27,15 +27,15 @@ erl -sname crawler -pa ebin -run inets -run see_crawler -see_crawler db_node DB_
 with crawlers geting URLs from the `see_db` node. Default number of crawlers is 1, but it can
 be changed by `crawler_num` parameter for `see_crawler` application.
 
-# Starting crawling
+## Starting crawling
 
 To start crawling, add first URL to the queue on the `see_db` node:
 
 ```erlang
-see_db_srv:queue("www.yahoo.com").
+see_db_srv:queue("http://www.yahoo.com").
 ```
 
-# Searching queries
+## Searching queries
 
 When you type on the `see_db` node:
 
