@@ -9,18 +9,18 @@ trigger_timeout(Pid) ->
     Pid ! timeout.
 
 start_crawler() ->
-    meck:new(see_db, [non_strict]),
+    meck:new(see_db_srv, [non_strict]),
     meck:new(httpc),
     meck:new(see_html),
-    {ok, Pid} = see_crawler_worker:start_link(),
+    {ok, Pid} = see_crawler_worker:start_link(node()),
     ?assert(is_pid(Pid)),
     Pid.
 
 stop_crawler(Pid) ->
-    ?assert(meck:validate(see_db)),
+    ?assert(meck:validate(see_db_srv)),
     ?assert(meck:validate(httpc)),
     ?assert(meck:validate(see_html)),
-    meck:unload(see_db),
+    meck:unload(see_db_srv),
     meck:unload(httpc),
     meck:unload(see_html),
     see_crawler_worker:stop(Pid).
@@ -28,7 +28,7 @@ stop_crawler(Pid) ->
 when_no_next_url__do_nothing__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
-             meck:expect(see_db, next, fun() -> nothing end),
+             meck:expect(see_db_srv, next, fun() -> nothing end),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
@@ -37,8 +37,8 @@ when_next_url_is_error__call_visited_with_undefined__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
              meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {error, test}}]),
-             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, {error, test}], ok}]),
+             meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db_srv, visited, [{[?URL, {error, test}], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
@@ -50,8 +50,8 @@ when_next_url_is_binary__call_visited_with_binary__test_() ->
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
              meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
-             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, binary], ok}]),
+             meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db_srv, visited, [{[?URL, binary], ok}]),
              meck:expect(see_html, is_text, [{[Headers], false}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
@@ -65,12 +65,12 @@ when_next_url_is_text__call_visited_with_content__test_() ->
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
              meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
-             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
              meck:expect(see_html, is_text, [{[Headers], true}]),
              meck:expect(see_html, words, [{[?CONTENT], ?CONTENT_WORDS}]),
              meck:expect(see_html, links, [{[?URL, ?CONTENT], Links}]),
-             meck:expect(see_db, visited, [{[?URL, ?CONTENT_WORDS], ok}]),
-             meck:expect(see_db, queue, [{["link1"], ok}, {["link2"], ok}]),
+             meck:expect(see_db_srv, visited, [{[?URL, ?CONTENT_WORDS], ok}]),
+             meck:expect(see_db_srv, queue, [{["link1"], ok}, {["link2"], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
@@ -83,9 +83,9 @@ when_next_url_is_redirect__call_visited_with_redirect_url__test_() ->
              Page = {{"HTTP/1.1", 301, "OK"}, Headers, []},
 
              meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
-             meck:expect(see_db, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_db, visited, [{[?URL, {redirect, RedirectURL}], ok}]),
-             meck:expect(see_db, queue, [{[RedirectURL], ok}]),
+             meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
+             meck:expect(see_db_srv, visited, [{[?URL, {redirect, RedirectURL}], ok}]),
+             meck:expect(see_db_srv, queue, [{[RedirectURL], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.
