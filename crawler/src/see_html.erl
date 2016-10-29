@@ -11,7 +11,18 @@ is_text(Headers) ->
     lists:member(MIME, ?TEXT_MIME).
 
 words(Content) ->
-    string:tokens(Content, " ").
+    DataTokens = lists:filter(fun is_data_token/1, mochiweb_html:tokens(Content)),
+    lists:flatmap(fun words_from_data_token/1, DataTokens).
+
+is_data_token({data, _, _}) ->
+    true;
+
+is_data_token(_) ->
+    false.
+
+words_from_data_token({data, Data, _}) ->
+    Separators = lists:map(fun(X) -> <<X>> end, " \n\t\r,.()[]{}\"'`"),
+    binary:split(Data, Separators, [global, trim_all]).
 
 links(URL, Content) ->
     case re:run(Content, "<a *href=\"([^\"# ]*)", 

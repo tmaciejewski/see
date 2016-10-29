@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rebar compile || exit 1
-erl -sname db -pa ebin -run see_db start
+rebar3 compile || exit 1
+rebar3 shell --sname db@localhost --apps see_db start

@@ -37,7 +37,7 @@ queue(URL) ->
 next() ->
     gen_server:call(?MODULE, next).
 
-search(Phrases) ->
+search(Phrases) when is_binary(Phrases) ->
     gen_server:call(?MODULE, {search, Phrases}).
 
 %----------------------------------------------------------
@@ -68,9 +68,10 @@ handle_cast({visited, URL, {redirect, RedirectURL}}, {PagesTid, IndexTid}) ->
     ets:insert(PagesTid, #page{id = Id, url = URL, words = {redirect, RedirectURL}}),
     {noreply, {PagesTid, IndexTid}};
 
-handle_cast({visited, URL, Words}, {PagesTid, IndexTid}) ->
+handle_cast({visited, URL, RawWords}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
     remove_from_index(IndexTid, PagesTid, Id),
+    Words = [unistring:to_lower(Word) || Word <- RawWords],
     ets:insert(PagesTid, #page{id = Id, url = URL, words = Words}),
     insert_to_index(IndexTid, Words, Id),
     {noreply, {PagesTid, IndexTid}};
@@ -100,8 +101,8 @@ handle_call(next, _, {PagesTid, _} = State) ->
     end;
 
 handle_call({search, Phrases}, _, {PagesTid, IndexTid} = State) ->
-    Words = string:tokens(Phrases, " "),
-    PageLists = [get_pages(Word, IndexTid) || Word <- Words],
+    Words = binary:split(Phrases, <<" ">>, [global, trim_all]),
+    PageLists = [get_pages(unistring:to_lower(Word), IndexTid) || Word <- Words],
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id, PagesTid) || Id <- Result], State};
 

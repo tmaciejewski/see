@@ -1,4 +1,4 @@
 ebin
 *.swp
-.eunit
-.rebar
+_build
+rebar.lock

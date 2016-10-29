@@ -38,7 +38,7 @@ handle_info(timeout, DbNode) ->
             visit(DbNode, Next),
             {noreply, DbNode, ?SLEEP_TIMEOUT};
         {badrpc, Reason} ->
-            error_logger:error_report({badrpc, Reason}),
+            error_logger:error_report([{badrpc, Reason}, {node, DbNode}]),
             {noreply, DbNode, ?SLEEP_TIMEOUT}
    end.
 
@@ -58,7 +58,7 @@ code_change(_OldVsn, DbNode, _) ->
 %----------------------------------------------------------
 
 get_url(URL) ->
-    case httpc:request(get, {URL, []}, [{autoredirect, false}], []) of
+    case httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]) of
         {ok, {{_, ?CODE_OK, _}, Headers, Content}} ->
             case see_html:is_text(Headers) of
                 true ->

@@ -40,7 +40,7 @@ see_db_srv:queue("http://www.yahoo.com").
 When you type on the `see_db` node:
 
 ```erlang
-see_db_srv:search("USA Obama").
+see_db_srv:search(<<"USA Obama">>).
 ```
 
 It'll search pages, where both "USA" and "Obama" appears, and returns a list
@@ -49,7 +49,6 @@ of them in an order from highest number of occurrences to lowest.
 ## TODO
 
 Things not yet implemented:
-* encoding handling
 * stemming
 * ranking
 * distributed index storage

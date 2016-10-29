@@ -25,6 +25,9 @@ stop_crawler(Pid) ->
     meck:unload(see_html),
     see_crawler_worker:stop(Pid).
 
+expect_http_request(URL, Result) ->
+    meck:expect(httpc, request, [{[get, {URL, []}, '_', '_'], Result}]).
+
 when_no_next_url__do_nothing__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
@@ -36,7 +39,7 @@ when_no_next_url__do_nothing__test_() ->
 when_next_url_is_error__call_visited_with_undefined__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
-             meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {error, test}}]),
+             expect_http_request(?URL, {error, test}),
              meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db_srv, visited, [{[?URL, {error, test}], ok}]),
              trigger_timeout(Pid),
@@ -49,7 +52,7 @@ when_next_url_is_binary__call_visited_with_binary__test_() ->
              Headers = [{"content-type", "application/octet-stream"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
-             meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             expect_http_request(?URL, {ok, Page}),
              meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db_srv, visited, [{[?URL, binary], ok}]),
              meck:expect(see_html, is_text, [{[Headers], false}]),
@@ -64,7 +67,7 @@ when_next_url_is_text__call_visited_with_content__test_() ->
              Links = ["link1", "link2"],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, ?CONTENT},
 
-             meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             expect_http_request(?URL, {ok, Page}),
              meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
              meck:expect(see_html, is_text, [{[Headers], true}]),
              meck:expect(see_html, words, [{[?CONTENT], ?CONTENT_WORDS}]),
@@ -82,7 +85,7 @@ when_next_url_is_redirect__call_visited_with_redirect_url__test_() ->
              Headers = [{"location", RedirectURL}],
              Page = {{"HTTP/1.1", 301, "OK"}, Headers, []},
 
-             meck:expect(httpc, request, [{[get, {?URL, []}, [{autoredirect, false}], []], {ok, Page}}]),
+             expect_http_request(?URL, {ok, Page}),
              meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
              meck:expect(see_db_srv, visited, [{[?URL, {redirect, RedirectURL}], ok}]),
              meck:expect(see_db_srv, queue, [{[RedirectURL], ok}]),

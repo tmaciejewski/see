@@ -19,5 +19,5 @@
                   inets
                  ]},
   {mod, {see_crawler_app, []}},
-  {env, []}
+  {env, [{db_node, 'db@localhost'}]}
  ]}.
