@@ -2,5 +2,5 @@
 
 HOSTNAME=`hostname`
 
-rebar compile
+rebar compile || exit 1
 erl -sname crawler -pa ebin -run inets -run see_crawler -see_crawler db_node "db@$HOSTNAME"

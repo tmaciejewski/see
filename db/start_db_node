@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rebar compile
+rebar compile || exit 1
 erl -sname db -pa ebin -run see_db start
