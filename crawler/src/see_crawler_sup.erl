@@ -1,8 +1,7 @@
 -module(see_crawler_sup).
 -behaviour(supervisor).
 
--export([start_link/2,
-         add/1]).
+-export([start_link/2]).
 
 -export([init/1]).
 
