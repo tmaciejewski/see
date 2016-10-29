@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rebar compile
+erl -sname db -pa ebin -run see_db start

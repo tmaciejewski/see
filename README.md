@@ -9,23 +9,23 @@ into two applications:
 
 ## Starting see_db node
 
+This will start `see_db` node with `-sname db`:
+
 ```bash
 cd db
-rebar compile
-erl -sname db -pa ebin -run see_db start
+./start_db_node
 ```
 
 ## Starting see_crawler node
 
+This will create `see_crawler` node with crawlers geting URLs from the `see_db` node called `db`:
+
 ```bash
 cd crawler
-rebar compile
-erl -sname crawler -pa ebin -run inets -run see_crawler -see_crawler db_node DB_NODE@DN_HOST
+./start_crawler_node
 ```
 
-`DB_NODE@DB_HOST` must be the name of the node running `see_db`. This will create a supervisor
-with crawlers geting URLs from the `see_db` node. Default number of crawlers is 1, but it can
-be changed by `crawler_num` parameter for `see_crawler` application.
+Default number of crawlers is 1, but it can be changed by `crawler_num` parameter for `see_crawler` application.
 
 ## Starting crawling
 
