@@ -71,7 +71,7 @@ handle_cast({visited, URL, {redirect, RedirectURL}}, {PagesTid, IndexTid}) ->
 handle_cast({visited, URL, RawWords}, {PagesTid, IndexTid}) ->
     Id = erlang:phash2(URL),
     remove_from_index(IndexTid, PagesTid, Id),
-    Words = [unistring:to_lower(Word) || Word <- RawWords],
+    Words = process_words(RawWords),
     ets:insert(PagesTid, #page{id = Id, url = URL, words = Words}),
     insert_to_index(IndexTid, Words, Id),
     {noreply, {PagesTid, IndexTid}};
@@ -101,8 +101,8 @@ handle_call(next, _, {PagesTid, _} = State) ->
     end;
 
 handle_call({search, Phrases}, _, {PagesTid, IndexTid} = State) ->
-    Words = binary:split(Phrases, <<" ">>, [global, trim_all]),
-    PageLists = [get_pages(unistring:to_lower(Word), IndexTid) || Word <- Words],
+    Words = process_words(binary:split(Phrases, <<" ">>, [global, trim_all])),
+    PageLists = [get_pages(Word, IndexTid) || Word <- Words],
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id, PagesTid) || Id <- Result], State};
 
@@ -163,3 +163,13 @@ merge_page_lists([]) ->
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
 
+process_word(Word) ->
+    try
+        {true, unistring:to_lower(Word)}
+    catch
+        _:_ ->
+            false
+    end.
+
+process_words(RawWords) ->
+    lists:filtermap(fun process_word/1, RawWords).
