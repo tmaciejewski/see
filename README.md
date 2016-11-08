@@ -16,8 +16,6 @@ cd db
 ./start_db_node
 ```
 
-By default the web interface is available at `http://localhost:8888`.
-
 ## Starting see_crawler node
 
 This will create `see_crawler` node with crawlers geting URLs from the `see_db` node called `db`:
@@ -28,6 +26,15 @@ cd crawler
 ```
 
 Default number of crawlers is 1, but it can be changed by `crawler_num` parameter for `see_crawler` application.
+
+## Usage
+
+By default the web interface is available at `http://localhost:8888` on `db` node. You need to add first
+URL to begin crawling with.
+
+Each crawler requests an unvisited URL from `db` node and visits it, extracting words (as they are) and links from the page,
+and sends them back to `db` node. Words after normalization are saved into the index and links are inserted as
+unvisited URLs.
 
 ## TODO
 
