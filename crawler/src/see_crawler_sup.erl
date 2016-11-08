@@ -6,18 +6,12 @@
 -export([init/1]).
 
 start_link(CrawlerNum, DbNode) ->
-    case supervisor:start_link({local, ?MODULE}, ?MODULE, []) of
-        {ok, Pid} ->
-            lists:foreach(fun(_) -> add(DbNode) end, lists:seq(1, CrawlerNum)),
-            {ok, Pid};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [CrawlerNum, DbNode]).
 
-add(DbNode) ->
-    supervisor:start_child(?MODULE, [DbNode]).
+init([CrawlerNum, DbNode]) ->
+    CrawlersSpec = [make_spec(Id, DbNode) || Id <- lists:seq(1, CrawlerNum)],
+    {ok, {{one_for_one, 10, 5}, CrawlersSpec}}.
 
-init([]) ->
-    {ok, {{simple_one_for_one, 10, 5},
-            [{1, {see_crawler_worker, start_link, []}, transient, 1,
-                    worker, [see_crawler_worker]}]}}.
+make_spec(Id, DbNode) ->
+    {Id, {see_crawler_worker, start_link, [DbNode]},
+     transient, 1000, worker, [see_crawler_worker]}.
