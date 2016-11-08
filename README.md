@@ -16,6 +16,8 @@ cd db
 ./start_db_node
 ```
 
+By default the web interface is available at `http://localhost:8888`.
+
 ## Starting see_crawler node
 
 This will create `see_crawler` node with crawlers geting URLs from the `see_db` node called `db`:
@@ -26,25 +28,6 @@ cd crawler
 ```
 
 Default number of crawlers is 1, but it can be changed by `crawler_num` parameter for `see_crawler` application.
-
-## Starting crawling
-
-To start crawling, add first URL to the queue on the `see_db` node:
-
-```erlang
-see_db_srv:queue("http://www.yahoo.com").
-```
-
-## Searching queries
-
-When you type on the `see_db` node:
-
-```erlang
-see_db_srv:search(<<"USA Obama">>).
-```
-
-It'll search pages, where both "USA" and "Obama" appears, and returns a list
-of them in an order from highest number of occurrences to lowest.
 
 ## TODO
 

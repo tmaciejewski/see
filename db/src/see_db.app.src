@@ -7,7 +7,8 @@
       see_db,
       see_db_app,
       see_db_sup,
-      see_db_srv
+      see_db_srv,
+      see_web
   ]},
   {registered, [
       see_db_sup,
@@ -18,5 +19,5 @@
                   stdlib
                  ]},
   {mod, {see_db_app, []}},
-  {env, []}
+  {env, [{ip, {0,0,0,0}}, {port, 8888}]}
  ]}.
