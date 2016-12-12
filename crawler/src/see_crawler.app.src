@@ -8,7 +8,7 @@
       see_crawler_app,
       see_crawler_sup,
       see_crawler_worker,
-      see_html
+      see_http
   ]},
   {registered, [
       see_crawler_sup

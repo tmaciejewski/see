@@ -55,9 +55,9 @@ code_change(_OldVsn, DbNode, _) ->
 
 visit(DbNode, URL) ->
     case see_http:get_page(URL) of
-        {ok, Words, Links} ->
-            error_logger:info_report([{url, URL}, {words, length(Words)}, {links, length(Links)}]),
-            rpc:cast(DbNode, see_db_srv, visited, [URL, Words]),
+        {ok, Content, Links} ->
+            error_logger:info_report([{url, URL}, {words, length(Content)}, {links, length(Links)}]),
+            rpc:cast(DbNode, see_db_srv, visited, [URL, Content]),
             lists:foreach(fun(Link) -> rpc:cast(DbNode, see_db_srv, queue, [Link]) end, Links);
         binary ->
             rpc:cast(DbNode, see_db_srv, visited, [URL, binary]);

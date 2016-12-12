@@ -9,41 +9,42 @@
 -define(TEXT_MIME, ["text/html", "text/plain"]).
 
 get_page(URL) ->
-    case httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]) of
-        {ok, {{_, ?CODE_OK, _}, Headers, Content}} ->
-            case is_text(Headers) of
-                true ->
-                    {ok, words(Content), links(URL, Content)};
-                false ->
-                    binary
-            end;
-        {ok, {{_, ?CODE_MOVED, _}, Headers, _}} ->
-            {redirect, proplists:get_value("location", Headers)};
-        {ok, {{_, ?CODE_FOUND, _}, Headers, _}} ->
-            {redirect, proplists:get_value("location", Headers)};
-        {ok, {{_, Code, _}, Headers, Content}} ->
-            {error, {Code, Headers, Content}};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    Response = httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]),
+    handle_response(Response, URL).
 
-is_text(Headers) ->
+handle_response({ok, {{_, ?CODE_OK, _}, Headers, Content}}, URL) ->
+    case is_text_page(Headers) of
+        true ->
+            {ok, text(Content), links(URL, Content)};
+        false ->
+            binary
+    end;
+
+handle_response({ok, {{_, ?CODE_MOVED, _}, Headers, _}}, _URL) ->
+    {redirect, proplists:get_value("location", Headers)};
+
+handle_response({ok, {{_, ?CODE_FOUND, _}, Headers, _}}, _URL) ->
+    {redirect, proplists:get_value("location", Headers)};
+
+handle_response({ok, {{_, Code, _}, Headers, Content}}, _URL) ->
+    {error, {Code, Headers, Content}};
+
+handle_response({error, Reason}, _URL) ->
+    {error, Reason}.
+
+is_text_page(Headers) ->
     MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
     lists:member(MIME, ?TEXT_MIME).
 
-words(Content) ->
-    DataTokens = lists:filter(fun is_data_token/1, mochiweb_html:tokens(Content)),
-    lists:flatmap(fun words_from_data_token/1, DataTokens).
+text(Content) ->
+    DataTokens = lists:map(fun token_data/1, mochiweb_html:tokens(Content)),
+    lists:filter(fun(D) -> D /= <<>> end, DataTokens).
 
-is_data_token({data, _, _}) ->
-    true;
+token_data({data, Data, _}) ->
+    Data;
 
-is_data_token(_) ->
-    false.
-
-words_from_data_token({data, Data, _}) ->
-    Separators = lists:map(fun(X) -> <<X>> end, " \n\t\r,.()[]{}\"'`"),
-    binary:split(Data, Separators, [global, trim_all]).
+token_data(_) ->
+    <<>>.
 
 links(URL, Content) ->
     case re:run(Content, "<a *href=\"([^\"# ]*)", 
