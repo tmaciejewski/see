@@ -1,10 +1,31 @@
--module(see_html).
+-module(see_http).
 
--export([is_text/1,
-         words/1,
-         links/2]).
+-export([get_page/1]).
+
+-define(CODE_OK, 200).
+-define(CODE_MOVED, 301).
+-define(CODE_FOUND, 302).
 
 -define(TEXT_MIME, ["text/html", "text/plain"]).
+
+get_page(URL) ->
+    case httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]) of
+        {ok, {{_, ?CODE_OK, _}, Headers, Content}} ->
+            case is_text(Headers) of
+                true ->
+                    {ok, words(Content), links(URL, Content)};
+                false ->
+                    binary
+            end;
+        {ok, {{_, ?CODE_MOVED, _}, Headers, _}} ->
+            {redirect, proplists:get_value("location", Headers)};
+        {ok, {{_, ?CODE_FOUND, _}, Headers, _}} ->
+            {redirect, proplists:get_value("location", Headers)};
+        {ok, {{_, Code, _}, Headers, Content}} ->
+            {error, {Code, Headers, Content}};
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 is_text(Headers) ->
     MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),

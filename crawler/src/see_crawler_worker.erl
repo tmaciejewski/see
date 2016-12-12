@@ -13,10 +13,6 @@
 
 -define(SLEEP_TIMEOUT, 3000).
 
--define(CODE_OK, 200).
--define(CODE_MOVED, 301).
--define(CODE_FOUND, 302).
-
 start_link(DbNode) ->
     gen_server:start_link(?MODULE, DbNode, []).
 
@@ -57,31 +53,10 @@ code_change(_OldVsn, DbNode, _) ->
 
 %----------------------------------------------------------
 
-get_url(URL) ->
-    case httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]) of
-        {ok, {{_, ?CODE_OK, _}, Headers, Content}} ->
-            case see_html:is_text(Headers) of
-                true ->
-                    {ok, Content};
-                false ->
-                    binary
-            end;
-        {ok, {{_, ?CODE_MOVED, _}, Headers, _}} ->
-            {redirect, proplists:get_value("location", Headers)};
-        {ok, {{_, ?CODE_FOUND, _}, Headers, _}} ->
-            {redirect, proplists:get_value("location", Headers)};
-        {ok, {{_, Code, _}, Headers, Content}} ->
-            {error, {Code, Headers, Content}};
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
 visit(DbNode, URL) ->
-    case get_url(URL) of
-        {ok, Content} ->
-            Words = see_html:words(Content),
-            Links = see_html:links(URL, Content),
-            error_logger:info_report([{url, URL}, {links, length(Links)}]),
+    case see_http:get_page(URL) of
+        {ok, Words, Links} ->
+            error_logger:info_report([{url, URL}, {words, length(Words)}, {links, length(Links)}]),
             rpc:cast(DbNode, see_db_srv, visited, [URL, Words]),
             lists:foreach(fun(Link) -> rpc:cast(DbNode, see_db_srv, queue, [Link]) end, Links);
         binary ->
