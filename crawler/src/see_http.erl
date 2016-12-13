@@ -7,6 +7,8 @@
 -define(CODE_FOUND, 302).
 
 -define(TEXT_MIME, ["text/html", "text/plain"]).
+-define(A_TAG, <<"a">>).
+-define(HREF_ATTR, <<"href">>).
 
 get_page(URL) ->
     Response = httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]),
@@ -15,7 +17,9 @@ get_page(URL) ->
 handle_response({ok, {{_, ?CODE_OK, _}, Headers, Content}}, URL) ->
     case is_text_page(Headers) of
         true ->
-            {ok, text(Content), links(URL, Content)};
+            {TextChunks, Links} = lists:foldl(fun accumulate_data/2, {[], []}, mochiweb_html:tokens(Content)),
+            AbsLinks = lists:map(fun(Link) -> absLink(URL, Link) end, Links),
+            {ok, lists:reverse(TextChunks), lists:reverse(AbsLinks)};
         false ->
             binary
     end;
@@ -36,33 +40,33 @@ is_text_page(Headers) ->
     MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
     lists:member(MIME, ?TEXT_MIME).
 
-text(Content) ->
-    DataTokens = lists:map(fun token_data/1, mochiweb_html:tokens(Content)),
-    lists:filter(fun(D) -> D /= <<>> end, DataTokens).
+accumulate_data({data, Data, false}, {DataChunks, Links}) ->
+    {[Data|DataChunks], Links};
 
-token_data({data, Data, _}) ->
-    Data;
-
-token_data(_) ->
-    <<>>.
-
-links(URL, Content) ->
-    case re:run(Content, "<a *href=\"([^\"# ]*)", 
-                 [global, {capture, [1], list}]) of
-        {match, Match} ->
-            Links = lists:map(fun(Link) -> absLink(URL, Link) end, 
-                              lists:append(Match)),
-            lists:filter(fun(X) -> length(X) > 0 end, Links);
-        nomatch -> []
-    end.  
-
-absLink(URL, "/" ++ Link) ->
-    case http_uri:parse(URL) of
-        {ok, {_, _, Host, _, _, _}} ->
-            "http://" ++ string:join([Host, Link], "/");
-        _ ->
-            ""
+accumulate_data({start_tag, ?A_TAG, Attributes, false}, {DataChunks, Links}) ->
+    case proplists:get_value(?HREF_ATTR, Attributes) of
+        undefined ->
+            {DataChunks, Links};
+        ?HREF_ATTR ->
+            {DataChunks, Links};
+        Link ->
+            {DataChunks, [binary_to_list(Link)|Links]}
     end;
 
-absLink(_, Link) ->
-    Link.
+accumulate_data(_, {DataChunks, Links}) ->
+    {DataChunks, Links}.
+
+absLink(URL, Link) ->
+    {URLScheme, URLNetloc, URLPath, _, _} = mochiweb_util:urlsplit(URL),
+    case mochiweb_util:urlsplit(Link) of
+        {[], [], "/" ++ LinkPath, LinkQuery, _} ->
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, "/" ++ LinkPath, LinkQuery, []});
+        {[], [], LinkPath, LinkQuery, _} when length(URLPath) == 0 ->
+            Dir = "/",
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
+        {[], [], LinkPath, LinkQuery, _} ->
+            Dir = filename:dirname(URLPath),
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
+        {LinkScheme, LinkNetloc, LinkPath, LinkQuery, _} ->
+            mochiweb_util:urlunsplit({LinkScheme, LinkNetloc, LinkPath, LinkQuery, []})
+    end.
