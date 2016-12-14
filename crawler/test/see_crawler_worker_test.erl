@@ -2,7 +2,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "url").
--define(WORDS, "page word").
 
 trigger_timeout(Pid) ->
     Pid ! timeout.
@@ -54,9 +53,10 @@ when_next_url_is_normal_page__call_visited_with_content__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
              Links = ["link1", "link2"],
+             Content = "page word",
              meck:expect(see_db_srv, next, [{[], {ok, ?URL}}]),
-             meck:expect(see_http, get_page, [{[?URL], {ok, ?WORDS, Links}}]),
-             meck:expect(see_db_srv, visited, [{[?URL, ?WORDS], ok}]),
+             meck:expect(see_http, get_page, [{[?URL], {ok, Content, Links}}]),
+             meck:expect(see_db_srv, visited, [{[?URL, {data, Content}], ok}]),
              meck:expect(see_db_srv, queue, [{["link1"], ok}, {["link2"], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))

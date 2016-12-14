@@ -50,30 +50,15 @@ init(_Args) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, {error, Reason}}, State) ->
+handle_cast({visited, URL, {data, Data}}, State) ->
     Id = erlang:phash2(URL),
-    remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, content = {error, Reason}}),
-    {noreply, State};
-
-handle_cast({visited, URL, binary}, State) ->
-    Id = erlang:phash2(URL),
-    remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, content = binary}),
-    {noreply, State};
-
-handle_cast({visited, URL, {redirect, RedirectURL}}, State) ->
-    Id = erlang:phash2(URL),
-    remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, content = {redirect, RedirectURL}}),
+    Words = process_data(Data),
+    update_index(URL, Words),
+    lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
     {noreply, State};
 
 handle_cast({visited, URL, Content}, State) ->
-    Id = erlang:phash2(URL),
-    remove_from_index(Id),
-    Words = process_words(Content),
-    ets:insert(see_pages, #page{id = Id, url = URL, content = Words}),
-    lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
+    update_index(URL, Content),
     {noreply, State};
 
 handle_cast(_, State) ->
@@ -100,7 +85,7 @@ handle_call(next, _, State) ->
     end;
 
 handle_call({search, Phrase}, _, State) ->
-    Words = process_words(binary:split(Phrase, <<" ">>, [global, trim_all])),
+    Words = process_data([Phrase]),
     PageLists = [get_pages(Word) || Word <- Words],
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id) || Id <- Result], State};
@@ -134,6 +119,11 @@ queue_url(URL) ->
         _ ->
             ok
     end.
+
+update_index(URL, Content) ->
+    Id = erlang:phash2(URL),
+    remove_from_index(Id),
+    ets:insert(see_pages, #page{id = Id, url = URL, content = Content}).
 
 remove_from_index(Id) ->
     case ets:lookup(see_pages, Id) of
@@ -177,8 +167,10 @@ merge_page_lists([]) ->
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
 
-process_words(Content) ->
-    lists:filtermap(fun process_word/1, Content).
+process_data(Data) ->
+    Separators = [<<X>> || X <- " \n\t\r,.()[]{}\"'`"],
+    Words = lists:flatmap(fun(Chunk) -> binary:split(Chunk, Separators, [global, trim_all]) end, Data),
+    lists:filtermap(fun process_word/1, Words).
 
 process_word(Word) ->
     try

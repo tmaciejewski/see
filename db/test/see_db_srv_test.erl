@@ -32,27 +32,27 @@ queued_page() ->
 
 visited_page() ->
     Pid = start(),
-    see_db_srv:visited(?URL, ?WORDS),
+    see_db_srv:visited(?URL, {data, ?WORDS}),
     Pid.
 
 visited_many_pages() ->
     Pid = start(),
-    see_db_srv:visited(?URL, ?WORDS),
-    see_db_srv:visited(?URL2, ?WORDS2),
-    see_db_srv:visited(?URL3, ?WORDS3),
+    see_db_srv:visited(?URL, {data, ?WORDS}),
+    see_db_srv:visited(?URL2, {data, ?WORDS2}),
+    see_db_srv:visited(?URL3, {data, ?WORDS3}),
     Pid.
 
 visited_many_same_pages() ->
     Pid = start(),
-    see_db_srv:visited(?URL, ?WORDS),
-    see_db_srv:visited(?URL2, ?WORDS),
-    see_db_srv:visited(?URL3, ?WORDS),
+    see_db_srv:visited(?URL, {data, ?WORDS}),
+    see_db_srv:visited(?URL2, {data, ?WORDS}),
+    see_db_srv:visited(?URL3, {data, ?WORDS}),
     Pid.
 
 visited_page_has_changed() ->
     Pid = start(),
-    see_db_srv:visited(?URL, ?WORDS),
-    see_db_srv:visited(?URL, ?WORDS2),
+    see_db_srv:visited(?URL, {data, ?WORDS}),
+    see_db_srv:visited(?URL, {data, ?WORDS2}),
     Pid.
 
 when_no_queued_urls__next_returns_nothing_test_() ->
@@ -93,7 +93,7 @@ when_queued_url_with_fragment__fragment_is_discared__test_() ->
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
      [fun(_) ->
-              see_db_srv:visited(?URL, ?WORDS),
+              see_db_srv:visited(?URL, {data, ?WORDS}),
               ?_assertEqual(nothing, see_db_srv:next())
       end,
       fun(_) ->
