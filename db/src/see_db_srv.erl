@@ -16,7 +16,7 @@
          terminate/2,
          code_change/3]).
 
--record(page, {id, url, words, last_visit = erlang:timestamp()}).
+-record(page, {id, url, content, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
 
 start() ->
@@ -28,8 +28,8 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visited(URL, Words) ->
-    gen_server:cast(?MODULE, {visited, URL, Words}).
+visited(URL, Content) ->
+    gen_server:cast(?MODULE, {visited, URL, Content}).
 
 queue(URL) ->
     gen_server:call(?MODULE, {queue, URL}).
@@ -53,26 +53,26 @@ terminate(_, _) ->
 handle_cast({visited, URL, {error, Reason}}, State) ->
     Id = erlang:phash2(URL),
     remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, words = {error, Reason}}),
+    ets:insert(see_pages, #page{id = Id, url = URL, content = {error, Reason}}),
     {noreply, State};
 
 handle_cast({visited, URL, binary}, State) ->
     Id = erlang:phash2(URL),
     remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, words = binary}),
+    ets:insert(see_pages, #page{id = Id, url = URL, content = binary}),
     {noreply, State};
 
 handle_cast({visited, URL, {redirect, RedirectURL}}, State) ->
     Id = erlang:phash2(URL),
     remove_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, words = {redirect, RedirectURL}}),
+    ets:insert(see_pages, #page{id = Id, url = URL, content = {redirect, RedirectURL}}),
     {noreply, State};
 
-handle_cast({visited, URL, RawWords}, State) ->
+handle_cast({visited, URL, Content}, State) ->
     Id = erlang:phash2(URL),
     remove_from_index(Id),
-    Words = process_words(RawWords),
-    ets:insert(see_pages, #page{id = Id, url = URL, words = Words}),
+    Words = process_words(Content),
+    ets:insert(see_pages, #page{id = Id, url = URL, content = Words}),
     lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
     {noreply, State};
 
@@ -99,8 +99,8 @@ handle_call(next, _, State) ->
             {reply, nothing, State}
     end;
 
-handle_call({search, Phrases}, _, State) ->
-    Words = process_words(binary:split(Phrases, <<" ">>, [global, trim_all])),
+handle_call({search, Phrase}, _, State) ->
+    Words = process_words(binary:split(Phrase, <<" ">>, [global, trim_all])),
     PageLists = [get_pages(Word) || Word <- Words],
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id) || Id <- Result], State};
@@ -137,7 +137,7 @@ queue_url(URL) ->
 
 remove_from_index(Id) ->
     case ets:lookup(see_pages, Id) of
-        [#page{words = Words}] when is_list(Words) ->
+        [#page{content = Words}] when is_list(Words) ->
             lists:foreach(fun(Word) -> remove_from_word(Word, Id) end, Words);
         _Other ->
             ok
@@ -177,8 +177,8 @@ merge_page_lists([]) ->
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
 
-process_words(RawWords) ->
-    lists:filtermap(fun process_word/1, RawWords).
+process_words(Content) ->
+    lists:filtermap(fun process_word/1, Content).
 
 process_word(Word) ->
     try
