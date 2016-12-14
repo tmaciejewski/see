@@ -37,8 +37,8 @@ queue(URL) ->
 next() ->
     gen_server:call(?MODULE, next).
 
-search(Phrases) when is_binary(Phrases) ->
-    gen_server:call(?MODULE, {search, Phrases}).
+search(Phrase) when is_binary(Phrase) ->
+    gen_server:call(?MODULE, {search, Phrase}).
 
 %----------------------------------------------------------
 
@@ -52,7 +52,7 @@ terminate(_, _) ->
 
 handle_cast({visited, URL, {data, Data}}, State) ->
     Id = erlang:phash2(URL),
-    Words = process_data(Data),
+    Words = see_text:extract_words(Data),
     update_index(URL, Words),
     lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
     {noreply, State};
@@ -85,7 +85,7 @@ handle_call(next, _, State) ->
     end;
 
 handle_call({search, Phrase}, _, State) ->
-    Words = process_data([Phrase]),
+    Words = see_text:extract_words(Phrase),
     PageLists = [get_pages(Word) || Word <- Words],
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id) || Id <- Result], State};
@@ -166,17 +166,3 @@ merge_page_lists([]) ->
 
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
-
-process_data(Data) ->
-    Separators = [<<X>> || X <- " \n\t\r,.()[]{}\"'`"],
-    Words = lists:flatmap(fun(Chunk) -> binary:split(Chunk, Separators, [global, trim_all]) end, Data),
-    lists:filtermap(fun process_word/1, Words).
-
-process_word(Word) ->
-    try
-        {true, unistring:to_lower(Word)}
-    catch
-        _:_ ->
-            false
-    end.
-
