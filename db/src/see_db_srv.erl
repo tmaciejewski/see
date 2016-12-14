@@ -32,7 +32,7 @@ visited(URL, Words) ->
     gen_server:cast(?MODULE, {visited, URL, Words}).
 
 queue(URL) ->
-    gen_server:cast(?MODULE, {queue, URL}).
+    gen_server:call(?MODULE, {queue, URL}).
 
 next() ->
     gen_server:call(?MODULE, next).
@@ -76,21 +76,20 @@ handle_cast({visited, URL, RawWords}, {PagesTid, IndexTid}) ->
     insert_to_index(IndexTid, Words, Id),
     {noreply, {PagesTid, IndexTid}};
 
-handle_cast({queue, URL}, {PagesTid, _} = State) ->
-    Id = erlang:phash2(URL),
-    case ets:lookup(PagesTid, Id) of
-        [] ->
-            ets:insert(PagesTid, #page{id = Id, url = URL, last_visit = null});
-        _ ->
-            ok
-    end,
-    {noreply, State};
-
 handle_cast(_, State) ->
     {noreply, State}.
 
 handle_call(stop, _, State) ->
     {stop, shutdown, ok, State};
+
+handle_call({queue, URL}, _, {PagesTid, _} = State) ->
+    case sanitize_url(URL) of
+        {ok, SanitizedURL} ->
+            queue_url(SanitizedURL, PagesTid),
+            {reply, ok, State};
+        error ->
+            {reply, error, State}
+    end;
 
 handle_call(next, _, {PagesTid, _} = State) ->
     case ets:match(PagesTid, #page{last_visit = null, url = '$1', _ = '_'}, 1) of
@@ -116,6 +115,25 @@ code_change(_OldVsn, State, _) ->
     {ok, State}.
 
 %----------------------------------------------------------
+
+sanitize_url(URL) ->
+    case mochiweb_util:urlsplit(URL) of
+        {[], _, _, _, _} ->
+            error;
+        {Scheme, Netloc, [], Query, _} ->
+            {ok, mochiweb_util:urlunsplit({Scheme, Netloc, "/", Query, []})};
+        {Scheme, Netloc, Path, Query, _} ->
+            {ok, mochiweb_util:urlunsplit({Scheme, Netloc, Path, Query, []})}
+    end.
+
+queue_url(URL, PagesTid) ->
+    Id = erlang:phash2(URL),
+    case ets:lookup(PagesTid, Id) of
+        [] ->
+            ets:insert(PagesTid, #page{id = Id, url = URL, last_visit = null});
+        _ ->
+            ok
+    end.
 
 remove_from_index(IndexTid, PagesTid, Id) ->
     case ets:lookup(PagesTid, Id) of
@@ -163,6 +181,9 @@ merge_page_lists([]) ->
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
 
+process_words(RawWords) ->
+    lists:filtermap(fun process_word/1, RawWords).
+
 process_word(Word) ->
     try
         {true, unistring:to_lower(Word)}
@@ -171,5 +192,3 @@ process_word(Word) ->
             false
     end.
 
-process_words(RawWords) ->
-    lists:filtermap(fun process_word/1, RawWords).

@@ -1,7 +1,7 @@
 -module(see_db_srv_test).
 -include_lib("eunit/include/eunit.hrl").
 
--define(URL, "url").
+-define(URL, "http://www.foo.com/").
 -define(WORDS, [<<"aaa">>, <<"DDD">>, <<"eee">>, <<"fff">>]).
 
 -define(URL2, "url2").
@@ -27,7 +27,7 @@ stop(_) ->
 
 queued_page() ->
     Pid = start(),
-    see_db_srv:queue(?URL),
+    ok = see_db_srv:queue(?URL),
     Pid.
 
 visited_page() ->
@@ -55,17 +55,39 @@ visited_page_has_changed() ->
     see_db_srv:visited(?URL, ?WORDS2),
     Pid.
 
-when_no_queued_pages__next_returns_nothing_test_() ->
+when_no_queued_urls__next_returns_nothing_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              ?_assertEqual(nothing, see_db_srv:next())
      end}.
 
-when_queued_page__next_returns_its_url_test_() ->
+when_queued_url__next_returns_it_test_() ->
     {setup, fun queued_page/0, fun stop/1,
      fun(_) ->
              [?_assertEqual({ok, ?URL}, see_db_srv:next()),
               ?_assertEqual({ok, ?URL}, see_db_srv:next())]
+     end}.
+
+when_url_is_invalid__queue_returns_error_test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             ?_assertEqual(error, see_db_srv:queue("www.wrong.url"))
+     end}.
+
+when_queued_url_with_no_path__root_path_is_added__test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             URL = "http://www.url.com",
+             [?_assertEqual(ok, see_db_srv:queue(URL)),
+              ?_assertEqual({ok, URL ++ "/"}, see_db_srv:next())]
+     end}.
+
+when_queued_url_with_fragment__fragment_is_discared__test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             URL = "http://www.url.com/foo?query",
+             [?_assertEqual(ok, see_db_srv:queue(URL ++ "#fragment")),
+              ?_assertEqual({ok, URL}, see_db_srv:next())]
      end}.
 
 when_all_pages_visited__next_returns_nothing_test_() ->
@@ -86,8 +108,8 @@ when_all_pages_visited__next_returns_nothing_test_() ->
 when_page_is_visited__it_cannot_be_queued_again_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->
-             see_db_srv:queue(?URL), 
-             ?_assertEqual(nothing, see_db_srv:next())
+             [?_assertMatch(ok, see_db_srv:queue(?URL)),
+              ?_assertEqual(nothing, see_db_srv:next())]
      end}.
 
 when_word_is_not_present__search_returns_empty_list_test_() ->

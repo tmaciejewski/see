@@ -53,12 +53,11 @@ handle_request(Req, "/queue") ->
         undefined ->
             Req:respond({200, ?HEADERS, "Missing URL"});
         URL ->
-            case mochiweb_util:urlsplit(URL) of
-                {"http", _, _, _, _} = Parts ->
-                    see_db_srv:queue(mochiweb_util:urlunsplit(Parts)),
+            case see_db_srv:queue(URL) of
+                ok ->
                     error_logger:info_report([{added, URL}]),
                     Req:respond({200, ?HEADERS, "OK"});
-                _ ->
+                error ->
                     Req:respond({200, ?HEADERS, "Wrong URL"})
             end
     end;
