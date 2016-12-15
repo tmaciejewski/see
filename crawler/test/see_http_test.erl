@@ -69,7 +69,7 @@ page_content_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"aaa ">>, <<"bbb">>, <<" ccc ">>, <<"ddd">>, <<" eee">>], []},
+             ?_assertEqual({ok, [<<"aaa ">>, <<" ">>, <<"bbb">>, <<" ">>, <<" ccc ">>, <<" ">>, <<"ddd">>, <<" ">>, <<" eee">>], []},
                            see_http:get_page(?URL))
      end}.
 
@@ -80,7 +80,7 @@ external_links_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<"link2">>], ["http://external", "https://external_ssl"]},
+             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], ["http://external", "https://external_ssl"]},
                            see_http:get_page(?URL))
      end}.
 
@@ -92,7 +92,7 @@ internal_links_for_subpage_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(SubURL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<"link2">>], [?URL ++ "/bar/relative/link", ?URL ++ "/absolute/link"]},
+             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], [?URL ++ "/bar/relative/link", ?URL ++ "/absolute/link"]},
                            see_http:get_page(SubURL))
      end}.
 
@@ -103,7 +103,7 @@ internal_links_for_index_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<"link2">>], [?URL ++ "/relative/link", ?URL ++ "/absolute/link"]},
+             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], [?URL ++ "/relative/link", ?URL ++ "/absolute/link"]},
                            see_http:get_page(?URL))
      end}.
 
@@ -114,5 +114,5 @@ bad_links_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<"link2">>], []}, see_http:get_page(?URL))
+             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], []}, see_http:get_page(?URL))
      end}.

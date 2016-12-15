@@ -40,8 +40,11 @@ is_text_page(Headers) ->
     MIME = hd(string:tokens(proplists:get_value("content-type", Headers), ";")),
     lists:member(MIME, ?TEXT_MIME).
 
+accumulate_data({data, Data, false}, {[], Links}) ->
+    {[Data], Links};
+
 accumulate_data({data, Data, false}, {DataChunks, Links}) ->
-    {[Data|DataChunks], Links};
+    {[Data, <<" ">> | DataChunks], Links};
 
 accumulate_data({start_tag, ?A_TAG, Attributes, false}, {DataChunks, Links}) ->
     case proplists:get_value(?HREF_ATTR, Attributes) of
