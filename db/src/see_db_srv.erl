@@ -53,15 +53,12 @@ terminate(_, _) ->
 handle_cast({visited, URL, {data, Data}}, State) ->
     Id = erlang:phash2(URL),
     Words = see_text:extract_words(Data),
-    update_index(URL, Words),
+    update_page(URL, Words),
     lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
     {noreply, State};
 
 handle_cast({visited, URL, Content}, State) ->
-    update_index(URL, Content),
-    {noreply, State};
-
-handle_cast(_, State) ->
+    update_page(URL, Content),
     {noreply, State}.
 
 handle_call(stop, _, State) ->
@@ -88,10 +85,7 @@ handle_call({search, Phrase}, _, State) ->
     Words = see_text:extract_words(Phrase),
     PageLists = [get_pages(Word) || Word <- Words],
     Result = merge_page_lists(PageLists),
-    {reply, [get_url(Id) || Id <- Result], State};
-
-handle_call(_, _, State) ->
-    {noreply, State}.
+    {reply, [get_url(Id) || Id <- Result], State}.
 
 handle_info(_, State) ->
     {noreply, State}.
@@ -120,7 +114,7 @@ queue_url(URL) ->
             ok
     end.
 
-update_index(URL, Content) ->
+update_page(URL, Content) ->
     Id = erlang:phash2(URL),
     remove_from_index(Id),
     ets:insert(see_pages, #page{id = Id, url = URL, content = Content}).

@@ -112,6 +112,12 @@ when_page_is_visited__it_cannot_be_queued_again_test_() ->
               ?_assertEqual(nothing, see_db_srv:next())]
      end}.
 
+when_phrase_is_empty__search_returns_empty_list_test_() ->
+    {setup, fun visited_page/0, fun stop/1,
+     fun(_) ->
+             ?assert_search_result([], <<"">>)
+     end}.
+
 when_word_is_not_present__search_returns_empty_list_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->
@@ -149,7 +155,8 @@ when_many_words_are_given__search_returns_pages_containing_all_of_them_test_() -
      fun(_) ->
               [?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd">>),
                ?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd eee">>),
-               ?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd eee fff">>)]
+               ?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd eee fff">>),
+               ?assert_search_result([], <<"aaa bbb">>)]
      end}.
 
 when_page_changes__search_returns_only_new_content_test_() ->
