@@ -10,11 +10,12 @@ extract_words(Data) ->
 
 -spec strip_nonalpha_characters(iodata()) -> iodata().
 strip_nonalpha_characters(Data) ->
-    re:replace(Data, <<"[^A-Za-z0-9]">>, <<" ">>, [global]).
+    Separators = "[@!#$%^&*()\\-_=+\\]\\[\\\\{}|;:\\\"',.<>/?]",
+    re:replace(Data, Separators, <<" ">>, [global]).
 
 -spec split_to_words(iodata()) -> list(binary()).
 split_to_words(Data) ->
-    re:split(Data, <<" ">>, [{return, binary}]).
+    re:split(Data, <<"[ \t\n\r]">>, [{return, binary}]).
 
 -spec process_word(binary()) -> false | {ok, binary()}.
 process_word(Word) when size(Word) < 2 ->
