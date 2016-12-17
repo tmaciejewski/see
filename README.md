@@ -12,7 +12,6 @@ into two applications:
 This will start `see_db` node with `-sname db`:
 
 ```bash
-cd db
 ./start_db_node
 ```
 
@@ -21,7 +20,6 @@ cd db
 This will create `see_crawler` node with crawlers geting URLs from the `see_db` node called `db`:
 
 ```bash
-cd crawler
 ./start_crawler_node
 ```
 
