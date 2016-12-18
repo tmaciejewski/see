@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    see_db_sup:start_link().
+    see_db_sup:start_link(application:get_all_env()).
 
 stop(_State) ->
     ok.

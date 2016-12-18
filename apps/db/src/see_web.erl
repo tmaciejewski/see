@@ -1,17 +1,17 @@
 -module(see_web).
 
--export([start_link/0, stop/0, loop/1]).
+-export([start_link/1, stop/0, loop/1]).
 
 -define(HEADERS, [{"Content-Type", "text/html; charset=utf-8"}]).
 
-start_link() ->
-    {ok, Port} = application:get_env(port),
-    {ok, Ip} = application:get_env(ip),
-    Options = [{name, ?MODULE},
+start_link(Options) ->
+    Port = proplists:get_value(port, Options),
+    Ip = proplists:get_value(ip, Options),
+    HTTPOptions = [{name, ?MODULE},
                {ip, Ip},
                {port, Port},
                {loop, fun loop/1}],
-    mochiweb_http:start_link(Options).
+    mochiweb_http:start_link(HTTPOptions).
 
 stop() ->
     mochiweb_http:stop(?MODULE).

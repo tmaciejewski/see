@@ -1,8 +1,8 @@
 -module(see_db_srv).
 -behaviour(gen_server).
 
--export([start/0,
-         start_link/0,
+-export([start/1,
+         start_link/1,
          stop/0,
          visited/2,
          queue/1,
@@ -16,14 +16,16 @@
          terminate/2,
          code_change/3]).
 
+-record(state, {domain_filter = none}).
+
 -record(page, {id, url, content, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
 
-start() ->
-    gen_server:start({local, ?MODULE}, ?MODULE, [], []).
+start(Options) ->
+    gen_server:start({local, ?MODULE}, ?MODULE, Options, []).
 
-start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+start_link(Options) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, Options, []).
 
 stop() ->
     gen_server:call(?MODULE, stop).
@@ -42,10 +44,17 @@ search(Phrase) when is_binary(Phrase) ->
 
 %----------------------------------------------------------
 
-init(_Args) ->
+init(Options) ->
     ets:new(see_pages, [named_table, {keypos, #page.id}]),
     ets:new(see_index, [named_table, {keypos, #index.word}]),
-    {ok, []}.
+    case proplists:get_value(domain_filter, Options) of
+        undefined ->
+            {ok, #state{domain_filter = none}};
+        DomainFilter when is_list(DomainFilter) ->
+            {ok, #state{domain_filter = DomainFilter}};
+        _ ->
+            {stop, wrong_domain_filter}
+    end.
 
 terminate(_, _) ->
     ok.
@@ -67,8 +76,13 @@ handle_call(stop, _, State) ->
 handle_call({queue, URL}, _, State) ->
     case sanitize_url(URL) of
         {ok, SanitizedURL} ->
-            queue_url(SanitizedURL),
-            {reply, ok, State};
+            case filter_url(SanitizedURL, State#state.domain_filter) of
+                ok ->
+                    queue_url(SanitizedURL),
+                    {reply, ok, State};
+                error ->
+                    {reply, error, State}
+            end;
         error ->
             {reply, error, State}
     end;
@@ -103,6 +117,18 @@ sanitize_url(URL) ->
             {ok, mochiweb_util:urlunsplit({Scheme, Netloc, "/", Query, []})};
         {Scheme, Netloc, Path, Query, _} ->
             {ok, mochiweb_util:urlunsplit({Scheme, Netloc, Path, Query, []})}
+    end.
+
+filter_url(_, none) ->
+    ok;
+
+filter_url(URL, DomainFilter) ->
+    {_, Netloc, _, _, _} = mochiweb_util:urlsplit(URL),
+    case re:run(Netloc, DomainFilter) of
+        {match, _} ->
+            ok;
+        nomatch ->
+            error
     end.
 
 queue_url(URL) ->

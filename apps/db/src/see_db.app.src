@@ -1,24 +1,27 @@
-{application, see_db,
- [
-  {id, "see_db"},
-  {description, "Database of Search Engine in Erlang"},
-  {vsn, "1"},
-  {modules, [
-      see_db,
-      see_db_app,
-      see_db_sup,
-      see_db_srv,
-      see_text,
-      see_web
-  ]},
-  {registered, [
-      see_db_sup,
-      see_db_srv
-  ]},
-  {applications, [
-                  kernel,
-                  stdlib
-                 ]},
-  {mod, {see_db_app, []}},
-  {env, [{ip, {0,0,0,0}}, {port, 8888}]}
- ]}.
+{application, see_db, [
+    {id, "see_db"},
+    {description, "Database of Search Engine in Erlang"},
+    {vsn, "1"},
+    {modules, [
+        see_db,
+        see_db_app,
+        see_db_sup,
+        see_db_srv,
+        see_text,
+        see_web
+    ]},
+    {registered, [
+        see_db_sup,
+        see_db_srv
+    ]},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {mod, {see_db_app, []}},
+    {env, [
+        {ip, {0,0,0,0}},
+        {port, 8888},
+        {domain_filter, "^localhost"}
+    ]}
+]}.

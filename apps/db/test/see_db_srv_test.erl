@@ -10,15 +10,23 @@
 -define(URL3, "url3").
 -define(WORDS3, <<"ccc ddd fff ggg">>).
 
+-define(DOMAIN_FILTER, "foo").
+
 -define(assert_search_result(URLs, Phrase),
         ?_assertEqual(lists:sort(URLs), lists:sort(see_db_srv:search(Phrase)))).
 
-start() ->
+start(Options) ->
     meck:new(see_text),
     meck:expect(see_text, extract_words, fun(X) -> binary:split(X, <<" ">>, [global, trim_all]) end),
-    {ok, Pid} = see_db_srv:start(),
+    {ok, Pid} = see_db_srv:start(Options),
     ?assert(is_pid(Pid)),
     Pid.
+
+start() ->
+    start([]).
+
+start_with_domain_filter() ->
+    start([{domain_filter, ?DOMAIN_FILTER}]).
 
 stop(_) ->
     ?assert(meck:validate(see_text)),
@@ -26,7 +34,7 @@ stop(_) ->
     see_db_srv:stop().
 
 queued_page() ->
-    Pid = start(),
+    Pid = start([]),
     ok = see_db_srv:queue(?URL),
     Pid.
 
@@ -89,6 +97,15 @@ when_queued_url_with_fragment__fragment_is_discared__test_() ->
              [?_assertEqual(ok, see_db_srv:queue(URL ++ "#fragment")),
               ?_assertEqual({ok, URL}, see_db_srv:next())]
      end}.
+
+when_domain_filter_is_given__queueing_only_accepts_matching_urls__test_() ->
+    {setup, fun start_with_domain_filter/0, fun stop/1,
+     fun(_) ->
+             [?_assertEqual(ok, see_db_srv:queue("http://www.foo.com")),
+              ?_assertEqual(ok, see_db_srv:queue("http://www.foo.bar.com")),
+              ?_assertEqual(error, see_db_srv:queue("http://www.bar.com/foo"))]
+     end}.
+
 
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
