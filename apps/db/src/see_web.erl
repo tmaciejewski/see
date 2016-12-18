@@ -42,7 +42,7 @@ handle_request(Req, "/search") ->
             Result = see_db_srv:search(list_to_binary(Query)),
             error_logger:info_report([{query, Query}, {result, Result}]),
             Req:respond({200, ?HEADERS, ["<html>\n<body>\n",
-                                         "<h1>Results</h1>\n",
+                                         "<h1>Results for ", Query, "</h1>\n",
                                          result_to_html(Result),
                                          "</body>\n</html>"]})
     end;
@@ -67,7 +67,7 @@ handle_request(Req, "/" ++ Path) ->
 
 result_to_html(Result) ->
     ["<ol>\n",
-     [["<li><a href=\"", URL, "\">", URL, "</a></li>\n"] || URL <- Result],
+     [["<li><a href=\"", URL, "\">", mochiweb_util:unquote(URL), "</a></li>\n"] || URL <- Result],
      "</ol>\n"].
 
 get_base_dir(Module) ->
