@@ -9,7 +9,8 @@ trigger_timeout(Pid) ->
 start_crawler() ->
     meck:new(see_db_srv, [non_strict]),
     meck:new(see_http),
-    {ok, Pid} = see_crawler_worker:start_link(node()),
+    Options = [{db_node, node()}, {worker_timeout, 3000}],
+    {ok, Pid} = see_crawler_worker:start_link(Options),
     ?assert(is_pid(Pid)),
     Pid.
 
