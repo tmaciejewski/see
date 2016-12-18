@@ -20,7 +20,6 @@
     {mod, {see_crawler_app, []}},
     {env, [
         {crawler_num, 1},
-        {db_node, 'db@localhost'},
-        {worker_timeout, 5000}
+        {db_node, 'db@localhost'}
     ]}
 ]}.
