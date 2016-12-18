@@ -8,6 +8,7 @@
       see_db_app,
       see_db_sup,
       see_db_srv,
+      see_text,
       see_web
   ]},
   {registered, [
