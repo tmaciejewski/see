@@ -1,0 +1,521 @@
+Stefan Banach
+
+From Wikipedia, the free encyclopedia
+Jump to: navigation, search
+
+                             Stefan Banach
+عالم الرياضيات البولندى ستيفان بناخ.jpg
+                       (1892-03-30)March 30, 1892
+         Born          Kraków, Grand Duchy of Kraków, Austria-Hungary
+                       (today Poland)
+         Died          August 31, 1945(1945-08-31) (aged 53)
+                       Lviv, Ukrainian SSR, Soviet Union (today Ukraine)
+     Nationality       Polish
+        Fields         Mathematics
+     Institutions      University of Lwów
+      Alma mater       Technical University of Lwów
+   Doctoral advisor    Hugo Steinhaus
+  Doctoral students    Stanisław Mazur
+Other notable students Stanislaw Ulam
+                       Banach–Tarski paradox
+      Known for        Banach–Steinhaus theorem
+                       Functional analysis
+                       Memberships:
+    Notable awards     Academy of Sciences of the Ukrainian SSR,
+                       Polish Academy of Learning
+
+Stefan Banach ([ˈstɛfan ˈbanax] (● listen); 30 March 1892 – 31 August 1945) was
+a Polish mathematician who is generally considered one of the world's most
+important and influential 20th-century mathematicians. He was one of the
+founders of modern functional analysis, and an original member of the Lwów
+School of Mathematics. His major work was the 1932 book, Théorie des opérations
+linéaires (Theory of Linear Operations), the first monograph on the general
+theory of functional analysis.
+
+Born in Kraków, Banach attended IV Gymnasium, a secondary school, and worked on
+mathematics problems with his friend Witold Wilkosz. After graduating in 1910,
+Banach moved to Lwów. However, during World War I Banach returned to Kraków,
+where he befriended Hugo Steinhaus. After Banach solved some mathematics
+problems which Steinhaus considered difficult, they published their first joint
+work. In 1919, with several other mathematicians, Banach formed a mathematical
+society. In 1920 he received an assistantship at the Lwów Polytechnic.
+
+He soon became a professor at the Lwów Polytechnic, and a member of the Polish
+Academy of Learning. He organized the "Lwów School of Mathematics". Around 1929
+he began writing his Théorie des opérations linéaires.
+
+After the outbreak of World War II, in September 1939, Lwów was taken over by
+the Soviet Union. Banach became a member of the Academy of Sciences of Ukraine
+and was dean of Lwów University's Department of Mathematics and Physics.
+
+In 1941, when the Germans took over Lwów, all institutions of higher education
+were closed to Poles. As a result, Banach was forced to earn a living as a
+feeder of lice at Rudolf Weigl's Institute for Study of Typhus and Virology.
+While the job carried the risk of infection with typhus, it protected him from
+being sent to slave labor in Germany and from other forms of repression. When
+the Soviets recaptured Lwów in 1944, Banach reestablished the University.
+However, because the Soviets were removing Poles from Soviet-annexed
+formerly-Polish territories, Banach prepared to return to Kraków. Before he
+could do so, he died in August 1945, having been diagnosed seven months earlier
+with lung cancer.
+
+Some of the notable mathematical concepts that bear Banach's name include
+Banach spaces, Banach algebras, the Banach–Tarski paradox, the Hahn–Banach
+theorem, the Banach–Steinhaus theorem, the Banach-Mazur game, the
+Banach–Alaoglu theorem, and the Banach fixed-point theorem.
+
+Contents
+
+  • 1 Life
+      □ 1.1 Early life
+      □ 1.2 Discovery by Steinhaus
+      □ 1.3 Interbellum
+      □ 1.4 World War II
+  • 2 Contributions
+  • 3 Quotes
+  • 4 See also
+  • 5 Notes
+  • 6 References
+  • 7 External links
+
+Life[edit]
+
+Early life[edit]
+
+Stefan Banach was born on 30 March 1892 at St. Lazarus General Hospital in
+Kraków, then part of the Austro-Hungarian Empire. Banach's parents were Stefan
+Greczek and Katarzyna Banach, both natives of the Podhale region.^[1] Greczek
+was a soldier in the Austro-Hungarian Army stationed in Kraków. Little is known
+about Banach's mother.^[2]
+
+Unusually, Stefan's surname was that of his mother instead of his father,
+though he received his father's given name, Stefan. Since Stefan Greczek was a
+private and was prevented by military regulations from marrying, and the mother
+was too poor to support the child, the couple decided that he should be reared
+by family and friends.^[3] Stefan spent the first few years of his life with
+his grandmother, but when she took ill Greczek arranged for his son to be
+raised by Franciszka Płowa and her niece Maria Puchalska in Kraków. Young
+Stefan would regard Franciszka as his foster mother and Maria as his older
+sister.^[4] In his early years Banach was tutored by Juliusz Mien, a French
+intellectual and friend of the Płowa family, who had emigrated to Poland and
+supported himself with photography and translations of Polish literature into
+French. Mien taught Banach French and most likely encouraged him in his early
+mathematical pursuits.^[5]
+
+In 1902 Banach, aged 10, enrolled in Kraków's IV Gymnasium (also known as the
+Goetz Gymnasium). While the school specialized in the humanities, Banach and
+his best friend Witold Wiłkosz (also a future mathematician) spent most of
+their time working on mathematics problems during breaks and after school.^[6]
+Later in life Banach would credit Dr. Kamil Kraft, the mathematics and physics
+teacher at the gymnasium with kindling his interests in mathematics.^[7] While
+generally Banach was a diligent student he did on occasion receive low grades
+(he failed Greek during his first semester at the gymnasium) and would later
+speak critically of the school's math teachers.^[8]
+
+After obtaining his matura (high school degree) at age 18 in 1910, Banach moved
+to Lwów with the intention of studying at the Lwów Polytechnic. He initially
+chose engineering as his field of study since at the time he was convinced that
+there was nothing new to discover in mathematics.^[9] At some point he also
+attended Jagiellonian University in Kraków on a part-time basis. As Banach had
+to earn money to support his studies it was not until 1914 that he finally, at
+age 22, passed his high school graduation exams.^[10]
+
+When World War I broke out, Banach was excused from military service due to his
+left-handedness and poor vision. When the Russian Army opened its offensive
+toward Lwów, Banach left for Kraków, where he spent the rest of the war. He
+made his living as a tutor at the local gymnasiums, worked in a bookstore and
+as a foreman of road building crew. He attended some lectures at the
+Jagiellonian University at that time, including those of the famous Polish
+mathematicians Stanisław Zaremba and Kazimierz Żorawski, but little is known of
+that period of his life.^[11]
+
+Discovery by Steinhaus[edit]
+
+[220px-Otto_Nikodym_Stefan_Bana]
+ 
+Otto Nikodym and Stefan Banach Memorial Bench in Kraków, Poland (sculpted by
+Stefan Dousa)
+
+In 1916, in Kraków's Planty gardens, Banach encountered Professor Hugo
+Steinhaus, one of the renowned mathematicians of the time. According to
+Steinhaus, while he was strolling through the gardens he was surprised to
+overhear the term "Lebesgue integral" (Lebesgue integration was at the time
+still a fairly new idea in mathematics) and walked over to investigate. As a
+result, he met Banach, as well as Otto Nikodym.^[12] Steinhaus became
+fascinated with the self-taught young mathematician. The encounter resulted in
+a long-lasting collaboration and friendship. In fact, soon after the encounter
+Steinhaus invited Banach to solve some problems he had been working on but
+which had proven difficult. Banach solved them within a week and the two soon
+published their first joint work (On the Mean Convergence of Fourier Series).
+Steinhaus, Banach and Nikodym, along with several other Kraków mathematicians (
+Władysław Ślebodziński, Leon Chwistek, Alfred Rosenblatt and Włodzimierz Stożek
+) also established a mathematical society, which eventually became the Polish
+Mathematical Society.^[13] The society was officially founded on April 2, 1919.
+It was also through Steinhaus that Banach met his future wife, Łucja Braus.
+
+Interbellum[edit]
+
+[200px-Lwow_-_Kawiarnia_Szko]
+ 
+Scottish Café, meeting place of many famous Lwów mathematicians
+
+Steinhaus introduced Banach to academic circles and substantially accelerated
+his career. After Poland regained independence, in 1920 Banach was given an
+assistantship at the Lwów Polytechnic. Steinhaus' backing also allowed him to
+receive a doctorate without actually graduating from a university. The doctoral
+thesis, accepted by King John II Casimir University of Lwów in 1920 ^[14] and
+published in 1922,^[15] included the basic ideas of functional analysis, which
+was soon to become an entirely new branch of mathematics. The thesis was widely
+discussed in academic circles and allowed him in 1922 to become a professor at
+the Lwów Polytechnic. Initially an assistant to Professor Antoni Łomnicki, in
+1927 Banach received his own chair. In 1924 he was also accepted as a member of
+the Polish Academy of Learning. At the same time, from 1922, Banach also headed
+the second Chair of Mathematics at University of Lwów.
+
+Young and talented, Banach gathered around him a large group of mathematicians.
+The group, meeting in the Scottish Café, soon gave birth to the "Lwów School of
+Mathematics". In 1929 the group began publishing its own journal, Studia
+Mathematica, devoted primarily to Banach's field of study — functional
+analysis. Around that time, Banach also began working on his best-known work,
+the first monograph on the general theory of linear-metric space. First
+published in Polish in 1931,^[16] the following year it was also translated
+into French and gained wider recognition in European academic circles.^[17] The
+book was also the first in a long series of mathematics monographs edited by
+Banach and his circle. In June 17, 1924 Banach become a correspondence member
+of the Polish Academy of Sciences and Fine Arts in Kraków.
+
+World War II[edit]
+
+[200px-Cmentarz-Lyczakowski-]
+ 
+Banach's grave, Lychakiv Cemetery, Lviv (Lwów, in Polish)
+
+Following the invasion of Poland by Nazi Germany and the Soviet Union, Lwów
+came under the control of the Soviet Union for almost two years. Banach, from
+1939 a corresponding member of the Academy of Sciences of Ukraine, and on good
+terms with Soviet mathematicians,^[2] had to promise to learn Ukrainian to be
+allowed to keep his chair and continue his academic activities.^[18] Following
+the German takeover of Lwów in 1941 during Operation Barbarossa, all
+universities were closed and Banach, along with many colleagues and his son,
+was employed as lice feeder at Professor Rudolf Weigl's Typhus Research
+Institute. Employment in Weigl's Institute provided many unemployed university
+professors and their associates protection from random arrest and deportation
+to Nazi concentration camps.
+
+After the Red Army recaptured Lviv in the Lvov–Sandomierz Offensive of 1944,
+Banach returned to the University and helped re-establish it after the war
+years. However, because the Soviets were removing Poles from annexed formerly
+Polish territories, Banach began preparing to leave the city and settle in
+Kraków, Poland, where he had been promised a chair at the Jagiellonian
+University.^[2] He was also considered a candidate for Minister of Education of
+Poland.^[19] In January 1945, however, he was diagnosed with lung cancer and
+was allowed to stay in Lwów. He died on August 31, 1945, aged 53. His funeral
+at the Lychakiv Cemetery was attended by hundreds of people.^[19]
+
+Contributions[edit]
+
+[350px-Banach-Tarski_Paradox]
+ 
+Decomposition of a ball into two identical balls - the Banach–Tarski paradox.
+
+Banach's dissertation, completed in 1920 and published in 1922, formally
+axiomatized the concept of a complete normed vector space and laid the
+foundations for the area of functional analysis. In this work Banach called
+such spaces "class E-spaces", but in his 1932 book, Théorie des opérations
+linéaires, he changed terminology and referred to them as "spaces of type B",
+which most likely contributed to the subsequent eponymous naming of these
+spaces after him.^[20] The theory of what came to be known as Banach spaces had
+antecedents in the work of the Hungarian mathematician Frigyes Riesz (published
+in 1916) and contemporaneous contributions from Hans Hahn and Norbert Wiener.^
+[14] For a brief period in fact, complete normed linear spaces were referred to
+as "Banach-Wiener" spaces in mathematical literature, based on terminology
+introduced by Wiener himself. However, because Wiener's work on the topic was
+limited, the established name became just Banach spaces.^[20]
+
+Likewise, Banach's fixed point theorem, based on earlier methods developed by
+Charles Émile Picard, was included in his dissertation, and was later extended
+by his students (for example in the Banach–Schauder theorem) and other
+mathematicians (in particular Brouwer and Poincaré and Birkhoff). The theorem
+did not require linearity of the space, and applied to any Cauchy space
+(complete metric space).^[14]
+
+The Hahn–Banach theorem, is one of the fundamental theorems of functional
+analysis.^[14]
+
+  • Banach–Tarski paradox
+  • Banach–Steinhaus theorem
+  • Banach–Alaoglu theorem
+  • Banach–Stone theorem
+
+Quotes[edit]
+
+[150px-Stefan_banach_]
+ 
+Banach monument, Kraków
+
+Stanislaw Ulam, another mathematician of the Lwów School of Mathematics, in his
+autobiography, quotes Banach as saying:
+
+    "Good mathematicians see analogies. Great mathematicians see analogies
+    between analogies."
+
+Hugo Steinhaus said of Banach:
+
+    "An exceptional intellect, exceptional discoveries... he gave Polish
+    science... more than anybody else."
+    "Banach was my greatest scientific discovery."
+
+See also[edit]
+
+  • List of things named after Stefan Banach
+  • Closed range theorem
+  • Banach space
+  • List of Poles
+
+Notes[edit]
+
+ 1. ^ Waksmundzka-Hajnos 2006, p. 16
+ 2. ^ ^a ^b ^c O'Connor and Robertson
+ 3. ^ Kałuża 1996, pp. 2–4
+ 4. ^ Kałuża 1996, pp. 1–3
+ 5. ^ Kałuża 1996, p. 3
+ 6. ^ Kałuża 1996, p. 137
+ 7. ^ Jakimowicz & Miranowicz 2007, p. 4
+ 8. ^ Kałuża 1996, pp. 3–4
+ 9. ^ Jakimowicz & Miranowicz 2007, p.5
+10. ^ Kałuża 1996, p. 13
+11. ^ Kałuża 1996, p. 16
+12. ^ Jakimowicz & Miranowicz 2007, p. 6
+13. ^ Kałuża 1996, p. 23
+14. ^ ^a ^b ^c ^d Jahnke 2003, p. 402
+15. ^ Stefan Banach (1922). "Sur les opérations dans les ensembles abstraits et
+    leur application aux équations integrals (On operations in the abstract
+    sets and their application to integral equations)". Fundamenta Mathematicae
+    (in French and Polish). 3. 
+16. ^ Stefan Banach: Teoria operacji liniowych.
+17. ^ Stefan Banach: Théorie des opérations linéaires (in French; Theory of
+    Linear Operations).
+18. ^ Urbaniak
+19. ^ ^a ^b James 2003, p. 384
+20. ^ ^a ^b MacCluer 2008, p. 6
+
+References[edit]
+
+  • Jahnke, Hans Niels (2003). A History of Analysis. American Mathematical
+    Society. ISBN 0821826239. 
+  • Jakimowicz, E.; Miranowicz, A., eds. (2007). Stefan Banach - Remarkable
+    life, Brilliant mathematics. Gdańsk University Press and Adam Mickiewicz
+    University Press. ISBN 978-83-7326-451-9. 
+  • James, Ioan (2003). Remarkable Mathematicians: From Euler to von Neumann.
+    Cambridge University Press. ISBN 0521520940. 
+  • Kałuża, Roman (1996). Through a Reporter's Eyes: The Life of Stefan Banach.
+    Translated by Wojbor Andrzej Woyczyński and Ann Kostant. Birkhäuser. ISBN 
+    0-8176-3772-9. 
+  • Kosiedowski, Stanisław. "Stefan Banach". Mój Lwów. Retrieved 2008-05-20. 
+  • O'Connor, John J.; Robertson, Edmund F. (2000). "Stefan Banach". MacTutor
+    History of Mathematics archive. University of St. Andrews. Retrieved August
+    19, 2012. 
+  • Siegmund-Schultze, Reinhard (2003). Jahnke, Hans Niels, ed. A History of
+    Analysis. American Mathematical Society. ISBN 0-8218-2623-9. 
+  • MacCluer, Barbara (2008). Elementary Functional Analysis. Springer. ISBN 
+    0387855289. 
+  • Urbaniak, Mariusz (April 2002). "Geniusz: gen i już". Polityka. 8 (2348). 
+  • Waksmundzka-Hajnos, Monika (2006). "Wspomnienie o Stefanie Greczku". Focus.
+    Gdańsk University (11). 
+
+External links[edit]
+
+Find more aboutStefan Banachat Wikipedia's sister projects
+
+  • ●Quotations from Wikiquote
+
+  • Page devoted to Stefan Banach
+  • Stefan Banach at the Mathematics Genealogy Project
+  • Works by or about Stefan Banach in libraries (WorldCat catalog)
+
+                    • WorldCat Identities
+                    • VIAF: 4992585
+                    • LCCN: n86118445
+                    • ISNI: 0000 0000 8084 1061
+                    • GND: 11865697X
+Authority control   • SUDOC: 031635121
+                    • BNF: cb12281286s (data)
+                    • MGP: 12681
+                    • NLA: 35728297
+                    • NDL: 01030291
+                    • NKC: ola2002151534
+
+*
+Retrieved from "https://en.wikipedia.org/w/index.php?title=Stefan_Banach&oldid=
+745882199"
+Categories:
+
+  • 1892 births
+  • 1945 deaths
+  • 20th-century Polish mathematicians
+  • Soviet people
+  • Members of the Lwów Scientific Society
+  • Members of the Polish Academy of Learning
+  • Members of the National Academy of Sciences of Ukraine
+  • Lviv Polytechnic alumni
+  • Polish Gorals
+  • People from Kraków
+  • People from Lviv
+  • Burials at Lychakiv Cemetery
+
+Hidden categories:
+
+  • CS1 French-language sources (fr)
+  • Wikipedia articles with VIAF identifiers
+  • Wikipedia articles with LCCN identifiers
+  • Wikipedia articles with ISNI identifiers
+  • Wikipedia articles with GND identifiers
+  • Wikipedia articles with BNF identifiers
+  • Wikipedia articles with NLA identifiers
+
+Navigation menu
+
+Personal tools
+
+  • Not logged in
+  • Talk
+  • Contributions
+  • Create account
+  • Log in
+
+Namespaces
+
+  • Article
+  • Talk
+
+Variants 
+
+Views
+
+  • Read
+  • Edit
+  • View history
+
+More 
+
+Search
+
+[                    ][Search][Go]
+ 
+
+Navigation
+
+  • Main page
+  • Contents
+  • Featured content
+  • Current events
+  • Random article
+  • Donate to Wikipedia
+  • Wikipedia store
+
+Interaction
+
+  • Help
+  • About Wikipedia
+  • Community portal
+  • Recent changes
+  • Contact page
+
+Tools
+
+  • What links here
+  • Related changes
+  • Upload file
+  • Special pages
+  • Permanent link
+  • Page information
+  • Wikidata item
+  • Cite this page
+
+Print/export
+
+  • Create a book
+  • Download as PDF
+  • Printable version
+
+In other projects
+
+  • Wikimedia Commons
+  • Wikiquote
+
+Languages
+
+  • العربية
+  • Aragonés
+  • Asturianu
+  • Azərbaycanca
+  • বাংলা
+  • Беларуская
+  • Беларуская (тарашкевіца)‎
+  • Български
+  • Català
+  • Чӑвашла
+  • Čeština
+  • Corsu
+  • Cymraeg
+  • Deutsch
+  • Dolnoserbski
+  • Español
+  • Esperanto
+  • Euskara
+  • فارسی
+  • Français
+  • Frysk
+  • Furlan
+  • Galego
+  • 한국어
+  • Íslenska
+  • Italiano
+  • עברית
+  • Қазақша
+  • Latina
+  • Latviešu
+  • Magyar
+  • Македонски
+  • Malagasy
+  • Монгол
+  • Nederlands
+  • 日本語
+  • Napulitano
+  • Norsk bokmål
+  • Norsk nynorsk
+  • Oʻzbekcha/ўзбекча
+  • Piemontèis
+  • Polski
+  • Português
+  • Română
+  • Русский
+  • Sicilianu
+  • Slovenčina
+  • Suomi
+  • Svenska
+  • Türkçe
+  • Українська
+  • Tiếng Việt
+  • 中文
+  •  
+
+Edit links
+
+  • This page was last modified on 23 October 2016, at 22:53.
+  • Text is available under the Creative Commons Attribution-ShareAlike License
+     ; additional terms may apply. By using this site, you agree to the Terms
+    of Use and Privacy Policy. Wikipedia® is a registered trademark of the
+    Wikimedia Foundation, Inc., a non-profit organization.
+
+  • Privacy policy
+  • About Wikipedia
+  • Disclaimers
+  • Contact Wikipedia
+  • Developers
+  • Cookie statement
+  • Mobile view
+
+  • Wikimedia Foundation
+  • Powered by MediaWiki
+
