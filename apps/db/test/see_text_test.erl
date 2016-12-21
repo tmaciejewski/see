@@ -11,8 +11,8 @@ split_words_test_() ->
      ?_assertEqual([<<"aa">>, <<"bb">>], see_text:extract_words(<<"<[(aa)]>!@#$%^&*.,.|;:'\"?/={bb}">>))].
 
 normalize_words_test_() ->
-     ?_assertMatch([<<"zażółć"/utf8>>, <<"gęślą"/utf8>>, <<"jaźń"/utf8>>],
+     ?_assertEqual([<<"zażółć"/utf8>>, <<"gęślą"/utf8>>, <<"jaźń"/utf8>>],
                     see_text:extract_words(<<"ZAŻÓŁĆ GĘŚLĄ JAŹŃ"/utf8>>)).
 
 skip_one_letter_words_test_() ->
-     ?_assertMatch([<<"aaa">>, <<"bb">>], see_text:extract_words(<<"x aaa a f bb t">>)).
+     ?_assertEqual([<<"aaa">>, <<"bb">>], see_text:extract_words(<<"x aaa a f bb t">>)).
