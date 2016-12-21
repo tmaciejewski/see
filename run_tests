@@ -1,0 +1,25 @@
+#!/bin/sh
+
+run_unit_tests() {
+    rebar3 eunit -v
+}
+
+run_integration_tests() {
+    rebar3 ct --dir ct/see -v
+}
+
+case "$1" in
+    "unit")
+        run_unit_tests
+        ;;
+    "integration")
+        run_integration_tests
+        ;;
+    "all")
+        run_unit_tests && run_integration_tests
+        ;;
+    *)
+        echo "$0 (integration|unit|all)"
+        exit 1
+        ;;
+esac
