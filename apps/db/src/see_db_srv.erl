@@ -16,7 +16,7 @@
          terminate/2,
          code_change/3]).
 
--record(state, {domain_filter = none}).
+-record(state, {domain_filter = none, visiting_timeout = 30000}).
 
 -record(page, {id, url, content, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
@@ -88,10 +88,12 @@ handle_call({queue, URL}, _, State) ->
     end;
 
 handle_call(next, _, State) ->
-    case ets:match(see_pages, #page{last_visit = null, url = '$1', _ = '_'}, 1) of
-        {[[URL]], _} ->
+    case ets:match_object(see_pages, #page{last_visit = null, _ = '_'}, 1) of
+        {[Page = #page{url = URL}], _} ->
+            timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page}),
+            ets:insert(see_pages, Page#page{last_visit = pending}),
             {reply, {ok, URL}, State};
-        _ ->
+        '$end_of_table' ->
             {reply, nothing, State}
     end;
 
@@ -101,7 +103,8 @@ handle_call({search, Phrase}, _, State) ->
     Result = merge_page_lists(PageLists),
     {reply, [get_url(Id) || Id <- Result], State}.
 
-handle_info(_, State) ->
+handle_info({visiting_timeout, Page}, State) ->
+    ets:insert(see_pages, Page#page{last_visit = null}),
     {noreply, State}.
 
 code_change(_OldVsn, State, _) ->

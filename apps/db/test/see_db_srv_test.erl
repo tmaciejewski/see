@@ -63,17 +63,23 @@ visited_page_has_changed() ->
     see_db_srv:visited(?URL, {data, ?WORDS2}),
     Pid.
 
+trigger_timeout(Pid) ->
+    [[Msg]] = ets:match(timer_tab, {'_', timeout, {timer, send, [Pid, '$1']}}),
+    Pid ! Msg.
+
 when_no_queued_urls__next_returns_nothing_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              ?_assertEqual(nothing, see_db_srv:next())
      end}.
 
-when_queued_url__next_returns_it_test_() ->
+when_queued_url__next_returns_it_once_test_() ->
     {setup, fun queued_page/0, fun stop/1,
      fun(_) ->
              [?_assertEqual({ok, ?URL}, see_db_srv:next()),
-              ?_assertEqual({ok, ?URL}, see_db_srv:next())]
+              ?_assertEqual(nothing, see_db_srv:next()),
+              ?_assertMatch(ok, see_db_srv:queue(?URL)),
+              ?_assertEqual(nothing, see_db_srv:next())]
      end}.
 
 when_url_is_invalid__queue_returns_error_test_() ->
@@ -106,6 +112,13 @@ when_domain_filter_is_given__queueing_only_accepts_matching_urls__test_() ->
               ?_assertEqual(error, see_db_srv:queue("http://www.bar.com/foo"))]
      end}.
 
+when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() ->
+    {setup, fun queued_page/0, fun stop/1,
+     fun(Pid) ->
+             {ok, ?URL} = see_db_srv:next(),
+             trigger_timeout(Pid),
+             ?_assertEqual({ok, ?URL}, see_db_srv:next())
+     end}.
 
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
