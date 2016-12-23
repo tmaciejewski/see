@@ -85,7 +85,9 @@ when_queued_url__next_returns_it_once_test_() ->
 when_url_is_invalid__queue_returns_error_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             ?_assertEqual(error, see_db_srv:queue("www.wrong.url"))
+             [?_assertEqual(error, see_db_srv:queue("www.wrong.url")),
+              ?_assertEqual(error, see_db_srv:queue("ftp://www.wrong.url")),
+              ?_assertEqual(error, see_db_srv:queue("https://www.wrong.url"))]
      end}.
 
 when_queued_url_with_no_path__root_path_is_added__test_() ->
