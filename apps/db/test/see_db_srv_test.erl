@@ -82,6 +82,16 @@ when_queued_url__next_returns_it_once_test_() ->
               ?_assertEqual(nothing, see_db_srv:next())]
      end}.
 
+when_url_is_queued_many_times__it_is_returned_only_once__test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             [?_assertEqual(ok, see_db_srv:queue(?URL)),
+              ?_assertEqual(ok, see_db_srv:queue(?URL)),
+              ?_assertEqual(ok, see_db_srv:queue(string:to_upper(?URL))),
+              ?_assertEqual({ok, ?URL}, see_db_srv:next()),
+              ?_assertEqual(nothing, see_db_srv:next())]
+     end}.
+
 when_url_is_invalid__queue_returns_error_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->

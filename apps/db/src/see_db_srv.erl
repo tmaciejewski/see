@@ -113,14 +113,17 @@ code_change(_OldVsn, State, _) ->
 %----------------------------------------------------------
 
 sanitize_url(URL) ->
-    case mochiweb_util:urlsplit(URL) of
-        {"http", Netloc, [], Query, _} ->
-            {ok, mochiweb_util:urlunsplit({"http", Netloc, "/", Query, []})};
-        {"http", Netloc, Path, Query, _} ->
-            {ok, mochiweb_util:urlunsplit({"http", Netloc, Path, Query, []})};
-        _ ->
-            error
-    end.
+    {Schema, Netloc, Path, Query, _} =  mochiweb_util:urlsplit(URL),
+    sanitize_url(string:to_lower(Schema), string:to_lower(Netloc), Path, Query).
+
+sanitize_url("http", Netloc, [], Query) ->
+    {ok, mochiweb_util:urlunsplit({"http", Netloc, "/", Query, []})};
+
+sanitize_url("http", Netloc, Path, Query) ->
+    {ok, mochiweb_util:urlunsplit({"http", Netloc, Path, Query, []})};
+
+sanitize_url(_, _, _, _) ->
+    error.
 
 filter_url(_, none) ->
     ok;
