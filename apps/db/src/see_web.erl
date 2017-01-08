@@ -33,23 +33,15 @@ loop(Req) ->
 handle_request(Req, "/") ->
     handle_request(Req, "/index.html");
 
-handle_request(Req, "/search") ->
-    QueryStringData = Req:parse_qs(),
-    case proplists:get_value("q", QueryStringData) of
-        undefined ->
-            Req:respond({200, ?HEADERS, "Missing search query"});
-        Query ->
-            Result = see_db_srv:search(list_to_binary(Query)),
-            error_logger:info_report([{query, Query}, {result, Result}]),
-            Req:respond({200, ?HEADERS, ["<html>\n<body>\n",
-                                         "<h1>Results for ", Query, "</h1>\n",
-                                         result_to_html(Result),
-                                         "</body>\n</html>"]})
-    end;
+handle_request(Req, "/search/" ++ Query) ->
+    Results = [list_to_binary(R) || R <- see_db_srv:search(list_to_binary(Query))],
+    error_logger:info_report([{query, Query}, {result, Results}]),
+    Req:respond({200, [{"content-type", "application/json"}],
+                 mochijson2:encode({struct, [{"results", Results}]})});
 
-handle_request(Req, "/queue") ->
-    QueryStringData = Req:parse_qs(),
-    case proplists:get_value("url", QueryStringData) of
+handle_request(Req, "/add") ->
+    PostData = Req:parse_post(),
+    case proplists:get_value("url", PostData) of
         undefined ->
             Req:respond({200, ?HEADERS, "Missing URL"});
         URL ->
@@ -64,11 +56,6 @@ handle_request(Req, "/queue") ->
 
 handle_request(Req, "/" ++ Path) ->
     Req:serve_file(Path, local_path(["priv", "html"]), ?HEADERS).
-
-result_to_html(Result) ->
-    ["<ol>\n",
-     [["<li><a href=\"", URL, "\">", mochiweb_util:unquote(URL), "</a></li>\n"] || URL <- Result],
-     "</ol>\n"].
 
 get_base_dir(Module) ->
     {file, Here} = code:is_loaded(Module),
