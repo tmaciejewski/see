@@ -55,7 +55,7 @@ var SearchBoxView = Backbone.View.extend({
     search: function() {
         var that = this;
         var query = this.$('#search-input').val();
-        $.get('/search/' + query, function(resp) {
+        $.get('/search?query=' + encodeURIComponent(query), function(resp) {
             that.searchResultsView.render(resp.results);
         });
     }

@@ -33,11 +33,18 @@ loop(Req) ->
 handle_request(Req, "/") ->
     handle_request(Req, "/index.html");
 
-handle_request(Req, "/search/" ++ Query) ->
-    Results = [list_to_binary(R) || R <- see_db_srv:search(list_to_binary(Query))],
-    error_logger:info_report([{query, Query}, {result, Results}]),
-    Req:respond({200, [{"content-type", "application/json"}],
-                 mochijson2:encode({struct, [{"results", Results}]})});
+handle_request(Req, "/search") ->
+    QueryStringData = Req:parse_qs(),
+    case proplists:get_value("query", QueryStringData) of
+        undefined ->
+            Req:respond({200, [{"content-type", "application/json"}],
+                         mochijson2:encode({struct, [{"results", []}]})});
+        Query ->
+            Results = [list_to_binary(R) || R <- see_db_srv:search(list_to_binary(Query))],
+            error_logger:info_report([{query, Query}, {result, Results}]),
+            Req:respond({200, [{"content-type", "application/json"}],
+                         mochijson2:encode({struct, [{"results", Results}]})})
+    end;
 
 handle_request(Req, "/add") ->
     PostData = Req:parse_post(),
