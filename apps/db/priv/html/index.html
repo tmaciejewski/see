@@ -34,8 +34,7 @@
                         </div>
                         <div class="panel-body collapse" id="advanced-panel">
                             <label class="control-label" for="url">Add URL</label>
-                            <div class="input-group col-md-7">
-                                <span class="input-group-addon">http://</span>
+                            <div class="input-group">
                                 <input type="text" class="form-control" id="url" placeholder="URL...">
                                 <span class="input-group-btn"><button class="btn btn-default" type="button" id="add-url">Add</button></span>
                             </div>
@@ -63,8 +62,15 @@
             <% } %>
         </script>
 
-        <script type="text/template" id="alert-box-template">
+        <script type="text/template" id="alert-success-template">
             <div class="alert alert-dismissible alert-success" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <%- msg %>
+            </div>
+        </script>
+
+        <script type="text/template" id="alert-error-template">
+            <div class="alert alert-dismissible alert-danger" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <%- msg %>
             </div>

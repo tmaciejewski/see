@@ -37,32 +37,32 @@ handle_request(Req, "/search") ->
     QueryStringData = Req:parse_qs(),
     case proplists:get_value("query", QueryStringData) of
         undefined ->
-            Req:respond({200, [{"content-type", "application/json"}],
-                         mochijson2:encode({struct, [{"results", []}]})});
+            respond_json(Req, [{results, []}]);
         Query ->
             Results = [list_to_binary(R) || R <- see_db_srv:search(list_to_binary(Query))],
-            error_logger:info_report([{query, Query}, {result, Results}]),
-            Req:respond({200, [{"content-type", "application/json"}],
-                         mochijson2:encode({struct, [{"results", Results}]})})
+            respond_json(Req, [{results, Results}])
     end;
 
 handle_request(Req, "/add") ->
     PostData = Req:parse_post(),
     case proplists:get_value("url", PostData) of
         undefined ->
-            Req:respond({200, ?HEADERS, "Missing URL"});
+            respond_json(Req, [{result, error}]);
         URL ->
             case see_db_srv:queue(URL) of
                 ok ->
-                    error_logger:info_report([{added, URL}]),
-                    Req:respond({200, ?HEADERS, "OK"});
+                    respond_json(Req, [{result, ok}]);
                 error ->
-                    Req:respond({200, ?HEADERS, "Wrong URL"})
+                    respond_json(Req, [{result, error}])
             end
     end;
 
 handle_request(Req, "/" ++ Path) ->
     Req:serve_file(Path, local_path(["priv", "html"]), ?HEADERS).
+
+respond_json(Req, JSON) ->
+    Req:respond({200, [{"content-type", "application/json"}],
+                 mochijson2:encode({struct, JSON})}).
 
 get_base_dir(Module) ->
     {file, Here} = code:is_loaded(Module),

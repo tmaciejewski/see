@@ -1,9 +1,16 @@
+var ENTER = 13;
+
 var AlertView = Backbone.View.extend({
     el: '#alert-box',
-    template: _.template($('#alert-box-template').html()),
 
-    render: function(msg) {
-        this.$el.append(this.template({msg: msg}));
+    render: function(type, msg) {
+        var templateBody = '';
+        if (type == 'success')
+            templateBody = $('#alert-success-template').html();
+        else if (type == 'error')
+            templateBody = $('#alert-error-template').html();
+
+        this.$el.append(_.template(templateBody)({msg: msg}));
         return this;
     }
 });
@@ -12,14 +19,24 @@ var AdvancedView = Backbone.View.extend({
     el: '#advanced-panel',
 
     events: {
-        'change #url': 'addURL'
+        'keydown #url': 'keyDown',
+        'click #add-url': 'addURL'
     },
 
-    addURL: function(e) {
-        var url = 'http://' + e.target.value;
+    keyDown: function(e) {
+        if (e.keyCode == ENTER)
+            this.addURL();
+    },
+
+    addURL: function() {
+        var url = this.$('#url').val();
         $.post('/add', {'url': url}).done(function(resp) {
             var alertView = new AlertView();
-            alertView.render('Added: ' + url);
+            if (resp.result == 'ok') {
+                alertView.render('success', 'Added: ' + url);
+            } else {
+                alertView.render('error', 'Cannot add: ' + url);
+            }
         });
     }
 });
@@ -47,7 +64,6 @@ var SearchBoxView = Backbone.View.extend({
     },
 
     keyDown: function(e) {
-        var ENTER = 13;
         if (e.keyCode == ENTER)
             this.search();
     },
