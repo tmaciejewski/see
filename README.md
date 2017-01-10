@@ -43,9 +43,10 @@ unvisited URLs.
 
 ## TODO
 
-Things not yet implemented:
-* stemming
+* storing page title
+* https support
 * ranking
+* stemming
 * distributed index storage
 * persistent index storage
 * periodically updating already visited pages
