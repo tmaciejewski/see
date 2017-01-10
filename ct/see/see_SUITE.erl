@@ -54,7 +54,7 @@ assert_search_result(URL, Phrase, Pages) ->
 
 integration_test(Config) ->
     URL = proplists:get_value(url, Config),
-    assert_search_result(URL, <<"Chopin">>, ["/", "/Frederic%20Chopin.txt", "/Franz%20Liszt.txt"]),
-    assert_search_result(URL, <<"Żelazowa Wola"/utf8>>, ["/Frederic%20Chopin.txt"]),
-    assert_search_result(URL, <<"Alan Turing enigma">>, ["/Alan%20Turing.txt"]),
-    assert_search_result(URL, <<"Alan Turing">>, ["/", "/Alan%20Turing.txt"]).
+    assert_search_result(URL, <<"Chopin">>, ["/", "/Frederic Chopin.txt", "/Franz Liszt.txt"]),
+    assert_search_result(URL, <<"Żelazowa Wola"/utf8>>, ["/Frederic Chopin.txt"]),
+    assert_search_result(URL, <<"Alan Turing enigma">>, ["/Alan Turing.txt"]),
+    assert_search_result(URL, <<"Alan Turing">>, ["/", "/Alan Turing.txt"]).

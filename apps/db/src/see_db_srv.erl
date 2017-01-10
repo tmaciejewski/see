@@ -30,17 +30,17 @@ start_link(Options) ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visited(URL, Content) ->
+visited(URL, Content) when is_list(URL) ->
     gen_server:cast(?MODULE, {visited, URL, Content}).
 
-queue(URL) ->
+queue(URL) when is_list(URL) ->
     gen_server:call(?MODULE, {queue, URL}).
 
 next() ->
     gen_server:call(?MODULE, next).
 
-search(Phrase) when is_binary(Phrase) ->
-    gen_server:call(?MODULE, {search, Phrase}).
+search(Query) when is_binary(Query) ->
+    gen_server:call(?MODULE, {search, Query}).
 
 %----------------------------------------------------------
 
@@ -60,25 +60,37 @@ terminate(_, _) ->
     ok.
 
 handle_cast({visited, URL, {data, Data}}, State) ->
-    Id = erlang:phash2(URL),
-    Words = see_text:extract_words(Data),
-    update_page(URL, Words),
-    lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
-    {noreply, State};
+    case parse_url(URL) of
+        {ok, ParsedURL} ->
+            Words = see_text:extract_words(Data),
+            update_page(ParsedURL, Words),
+            Id = erlang:phash2(ParsedURL),
+            lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
+            error_logger:info_report([{url, ParsedURL}, {words, Words}]),
+            {noreply, State};
+        error ->
+            {noreply, State}
+    end;
 
 handle_cast({visited, URL, Content}, State) ->
-    update_page(URL, Content),
-    {noreply, State}.
+    case parse_url(URL) of
+        {ok, ParsedURL} ->
+            update_page(ParsedURL, Content),
+            {noreply, State};
+        error ->
+            {noreply, State}
+    end.
 
 handle_call(stop, _, State) ->
     {stop, shutdown, ok, State};
 
 handle_call({queue, URL}, _, State) ->
-    case sanitize_url(URL) of
-        {ok, SanitizedURL} ->
-            case filter_url(SanitizedURL, State#state.domain_filter) of
+    case parse_url(URL) of
+        {ok, ParsedURL} ->
+            case filter_url(ParsedURL, State#state.domain_filter) of
                 ok ->
-                    queue_url(SanitizedURL),
+                    error_logger:info_report([{queued, ParsedURL}]),
+                    queue_url(ParsedURL),
                     {reply, ok, State};
                 error ->
                     {reply, error, State}
@@ -92,16 +104,17 @@ handle_call(next, _, State) ->
         {[Page = #page{url = URL}], _} ->
             timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page}),
             ets:insert(see_pages, Page#page{last_visit = pending}),
-            {reply, {ok, URL}, State};
+            {reply, {ok, mochiweb_util:urlunsplit(URL)}, State};
         '$end_of_table' ->
             {reply, nothing, State}
     end;
 
-handle_call({search, Phrase}, _, State) ->
-    Words = see_text:extract_words(Phrase),
+handle_call({search, Query}, _, State) ->
+    Words = see_text:extract_words(Query),
     PageLists = [get_pages(Word) || Word <- Words],
-    Result = merge_page_lists(PageLists),
-    {reply, [get_url(Id) || Id <- Result], State}.
+    Result = [get_url(Id) || Id <- merge_page_lists(PageLists)],
+    error_logger:info_report([{query, Query}, {results, Result}]),
+    {reply, Result, State}.
 
 handle_info({visiting_timeout, Page}, State) ->
     ets:insert(see_pages, Page#page{last_visit = null}),
@@ -112,24 +125,23 @@ code_change(_OldVsn, State, _) ->
 
 %----------------------------------------------------------
 
-sanitize_url(URL) ->
-    {Schema, Netloc, Path, Query, _} =  mochiweb_util:urlsplit(URL),
-    sanitize_url(string:to_lower(Schema), string:to_lower(Netloc), Path, Query).
+parse_url(URL) ->
+    {Schema, Netloc, Path, Query, _} = mochiweb_util:urlsplit(URL),
+    parse_url(string:to_lower(Schema), string:to_lower(Netloc), Path, Query).
 
-sanitize_url("http", Netloc, [], Query) ->
-    {ok, mochiweb_util:urlunsplit({"http", Netloc, "/", Query, []})};
+parse_url("http", Netloc, [], Query) ->
+    {ok, {"http", Netloc, "/", Query, []}};
 
-sanitize_url("http", Netloc, Path, Query) ->
-    {ok, mochiweb_util:urlunsplit({"http", Netloc, Path, Query, []})};
+parse_url("http", Netloc, Path, Query) ->
+    {ok, {"http", Netloc, http_uri:decode(Path), http_uri:decode(Query), []}};
 
-sanitize_url(_, _, _, _) ->
+parse_url(_, _, _, _) ->
     error.
 
 filter_url(_, none) ->
     ok;
 
-filter_url(URL, DomainFilter) ->
-    {_, Netloc, _, _, _} = mochiweb_util:urlsplit(URL),
+filter_url({_, Netloc, _, _, _}, DomainFilter) ->
     case re:run(Netloc, DomainFilter) of
         {match, _} ->
             ok;
@@ -148,18 +160,18 @@ queue_url(URL) ->
 
 update_page(URL, Content) ->
     Id = erlang:phash2(URL),
-    remove_from_index(Id),
+    remove_page_from_index(Id),
     ets:insert(see_pages, #page{id = Id, url = URL, content = Content}).
 
-remove_from_index(Id) ->
+remove_page_from_index(Id) ->
     case ets:lookup(see_pages, Id) of
         [#page{content = Words}] when is_list(Words) ->
-            lists:foreach(fun(Word) -> remove_from_word(Word, Id) end, Words);
+            lists:foreach(fun(Word) -> remove_page_from_word(Word, Id) end, Words);
         _Other ->
             ok
     end.
 
-remove_from_word(Word, Id) ->
+remove_page_from_word(Word, Id) ->
     case ets:lookup(see_index, Word) of
         [] ->
             ok;
@@ -177,7 +189,7 @@ insert_to_index(Word, Id) ->
 
 get_url(Id) ->
     [#page{url = URL}] = ets:lookup(see_pages, Id),
-    URL.
+    mochiweb_util:urlunsplit(URL).
 
 get_pages(Word) ->
     case ets:lookup(see_index, Word) of

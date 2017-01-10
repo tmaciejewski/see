@@ -12,7 +12,7 @@ stop(_) ->
     meck:unload(httpc).
 
 expect_http_request(URL, Result) ->
-    meck:expect(httpc, request, [{[get, {URL, []}, '_', '_'], Result}]).
+    meck:expect(httpc, request, [{[get, {URL, '_'}, '_', '_'], Result}]).
 
 http_error_test_() ->
     {setup, fun start/0, fun stop/1,
@@ -115,4 +115,14 @@ bad_links_test_() ->
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
              ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], []}, see_http:get_page(?URL))
+     end}.
+
+url_encoding_test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             Content = "content",
+             Headers = [{"content-type", "text/plain"}],
+             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
+             expect_http_request("http://localhost/foo/lorem%20ipsum", {ok, Page}),
+             ?_assertEqual({ok, [<<"content">>], []}, see_http:get_page("http://localhost/foo/lorem ipsum"))
      end}.

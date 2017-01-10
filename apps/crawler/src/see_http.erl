@@ -11,8 +11,31 @@
 -define(HREF_ATTR, <<"href">>).
 
 get_page(URL) ->
-    Response = httpc:request(get, {URL, []}, [{autoredirect, false}], [{body_format, binary}]),
+    Headers = [{"user-agent", "SEE (Search Engine in Erlang; https://github.com/tmaciejewski/see)"}],
+    HTTPOptions = [{autoredirect, false}, {relaxed, true}],
+    Options = [{body_format, binary}],
+    Response = httpc:request(get, {encode_url(URL), Headers}, HTTPOptions, Options),
     handle_response(Response, URL).
+
+encode_url(URL) ->
+    {Schema, NetLoc, Path, Query, _} = mochiweb_util:urlsplit(URL),
+    mochiweb_util:urlunsplit({Schema, NetLoc, encode_path(Path), encode_query(Query), []}).
+
+encode_path(Path) ->
+    PathElements = filename:split(Path),
+    case PathElements of
+        [] ->
+            [];
+        ["/"|Elements] ->
+            EncodedElements = [http_uri:encode(E) || E <- Elements],
+            filename:join(["/"|EncodedElements]);
+        Elements ->
+            EncodedElements = [http_uri:encode(E) || E <- Elements],
+            filename:join(EncodedElements)
+    end.
+
+encode_query(Query) ->
+    Query.
 
 handle_response({ok, {{_, ?CODE_OK, _}, Headers, Content}}, URL) ->
     case is_text_page(Headers) of

@@ -4,10 +4,10 @@
 -define(URL, "http://www.foo.com/").
 -define(WORDS, <<"aaa ddd eee fff">>).
 
--define(URL2, "url2").
+-define(URL2, "http://url2/").
 -define(WORDS2, <<"bbb ddd eee ggg">>).
 
--define(URL3, "url3").
+-define(URL3, "http://url3/").
 -define(WORDS3, <<"ccc ddd fff ggg">>).
 
 -define(DOMAIN_FILTER, "foo").
@@ -207,4 +207,11 @@ when_page_changes__search_returns_only_new_content_test_() ->
               [?assert_search_result([], <<"aaa">>),
                ?assert_search_result([?URL], <<"ddd">>),
                ?assert_search_result([?URL], <<"ggg">>)]
+     end}.
+
+when_encoded_url_is_queued__it_is_returned_decoded__test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             [?_assertEqual(ok, see_db_srv:queue("http://localhost/a%20b.txt?foo%20bar")),
+              ?_assertEqual({ok, "http://localhost/a b.txt?foo bar"}, see_db_srv:next())]
      end}.
