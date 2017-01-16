@@ -43,8 +43,8 @@ unvisited URLs.
 
 ## TODO
 
-* storing page title
 * https support
+* different encoding support (eg. 1250cp)
 * ranking
 * stemming
 * distributed index storage
