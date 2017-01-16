@@ -60,9 +60,13 @@ code_change(_OldVsn, State, _) ->
 
 visit(DbNode, URL) ->
     case see_http:get_page(URL) of
-        {ok, Content, Links} ->
-            error_logger:info_report([{url, URL}, {data_length, length(Content)}, {links, length(Links)}]),
-            rpc:cast(DbNode, see_db_srv, visited, [URL, {data, Content}]),
+        {ok, Content} ->
+            Page = see_html:parse(Content),
+            Title = see_html:title(Page),
+            Text = see_html:text(Page),
+            Links = [absolute_link(URL, Link) || Link <- see_html:links(Page)],
+            error_logger:info_report([{url, URL}, {title, Title}, {links, Links}]),
+            rpc:cast(DbNode, see_db_srv, visited, [URL, {data, Title, Text}]),
             lists:foreach(fun(Link) -> rpc:cast(DbNode, see_db_srv, queue, [Link]) end, Links);
         binary ->
             rpc:cast(DbNode, see_db_srv, visited, [URL, binary]);
@@ -73,4 +77,19 @@ visit(DbNode, URL) ->
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
             rpc:cast(DbNode, see_db_srv, visited, [URL, {error, Reason}])
+    end.
+
+absolute_link(URL, Link) ->
+    {URLScheme, URLNetloc, URLPath, _, _} = mochiweb_util:urlsplit(URL),
+    case mochiweb_util:urlsplit(Link) of
+        {[], [], "/" ++ LinkPath, LinkQuery, _} ->
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, "/" ++ LinkPath, LinkQuery, []});
+        {[], [], LinkPath, LinkQuery, _} when length(URLPath) == 0 ->
+            Dir = "/",
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
+        {[], [], LinkPath, LinkQuery, _} ->
+            Dir = filename:dirname(URLPath),
+            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
+        {LinkScheme, LinkNetloc, LinkPath, LinkQuery, _} ->
+            mochiweb_util:urlunsplit({LinkScheme, LinkNetloc, LinkPath, LinkQuery, []})
     end.

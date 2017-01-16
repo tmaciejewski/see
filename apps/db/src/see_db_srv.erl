@@ -59,6 +59,9 @@ init(Options) ->
 terminate(_, _) ->
     ok.
 
+handle_cast({visited, URL, {data, _Title, Data}}, State) ->
+    handle_cast({visited, URL, {data, Data}}, State);
+
 handle_cast({visited, URL, {data, Data}}, State) ->
     case parse_url(URL) of
         {ok, ParsedURL} ->

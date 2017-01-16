@@ -62,59 +62,14 @@ unknown_code_test_() ->
              ?_assertEqual({error, {Code, Headers, Content}}, see_http:get_page(?URL))
      end}.
 
-page_content_test_() ->
+ok_code_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             Content = "aaa <foo='xxx'>bbb</foo> ccc <bar>ddd</bar> eee",
+             Content = "content",
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"aaa ">>, <<" ">>, <<"bbb">>, <<" ">>, <<" ccc ">>, <<" ">>, <<"ddd">>, <<" ">>, <<" eee">>], []},
-                           see_http:get_page(?URL))
-     end}.
-
-external_links_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             Content = "<a href=http://external>link1</a> <a href='https://external_ssl'>link2</a>",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], ["http://external", "https://external_ssl"]},
-                           see_http:get_page(?URL))
-     end}.
-
-internal_links_for_subpage_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             SubURL = ?URL ++ "/bar/sub.html",
-             Content = "<a href=relative/link>link1</a> <a href='/absolute/link'>link2</a>",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request(SubURL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], [?URL ++ "/bar/relative/link", ?URL ++ "/absolute/link"]},
-                           see_http:get_page(SubURL))
-     end}.
-
-internal_links_for_index_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             Content = "<a href=relative/link>link1</a> <a href='/absolute/link'>link2</a>",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], [?URL ++ "/relative/link", ?URL ++ "/absolute/link"]},
-                           see_http:get_page(?URL))
-     end}.
-
-bad_links_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             Content = "<a>link1</a> <a href>link2</a>",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({ok, [<<"link1">>, <<" ">>, <<"link2">>], []}, see_http:get_page(?URL))
+             ?_assertEqual({ok, Content}, see_http:get_page(?URL))
      end}.
 
 url_encoding_test_() ->
@@ -124,5 +79,5 @@ url_encoding_test_() ->
              Headers = [{"content-type", "text/plain"}],
              Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
              expect_http_request("http://localhost/foo/lorem%20ipsum", {ok, Page}),
-             ?_assertEqual({ok, [<<"content">>], []}, see_http:get_page("http://localhost/foo/lorem ipsum"))
+             ?_assertEqual({ok, Content}, see_http:get_page("http://localhost/foo/lorem ipsum"))
      end}.
