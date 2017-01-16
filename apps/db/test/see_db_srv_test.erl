@@ -135,6 +135,15 @@ when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() -
              ?_assertEqual({ok, ?URL}, see_db_srv:next())
      end}.
 
+when_page_returned_by_next_is_visited_in_time__dont_requeue_it__test_() ->
+    {setup, fun queued_page/0, fun stop/1,
+     fun(Pid) ->
+             {ok, ?URL} = see_db_srv:next(),
+             see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
+             trigger_timeout(Pid),
+             ?_assertEqual(nothing, see_db_srv:next())
+     end}.
+
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
      [fun(_) ->

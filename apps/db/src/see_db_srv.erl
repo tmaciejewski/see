@@ -101,7 +101,7 @@ handle_call({queue, URL}, _, State) ->
 handle_call(next, _, State) ->
     case ets:match_object(see_pages, #page{last_visit = null, _ = '_'}, 1) of
         {[Page = #page{url = URL}], _} ->
-            timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page}),
+            timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page#page.id}),
             ets:insert(see_pages, Page#page{last_visit = pending}),
             {reply, {ok, mochiweb_util:urlunsplit(URL)}, State};
         '$end_of_table' ->
@@ -115,9 +115,14 @@ handle_call({search, Query}, _, State) ->
     error_logger:info_report([{query, Query}, {results, Result}]),
     {reply, Result, State}.
 
-handle_info({visiting_timeout, Page}, State) ->
-    ets:insert(see_pages, Page#page{last_visit = null}),
-    {noreply, State}.
+handle_info({visiting_timeout, Id}, State) ->
+    case ets:lookup(see_pages, Id) of
+        [Page = #page{last_visit = pending}] ->
+            ets:insert(see_pages, Page#page{last_visit = null}),
+            {noreply, State};
+        _  ->
+            {noreply, State}
+    end.
 
 code_change(_OldVsn, State, _) ->
     {ok, State}.
