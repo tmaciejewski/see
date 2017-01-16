@@ -39,8 +39,9 @@ handle_request(Req, "/search") ->
         undefined ->
             respond_json(Req, [{results, []}]);
         Query ->
-            Results = [list_to_binary(R) || R <- see_db_srv:search(list_to_binary(Query))],
-            respond_json(Req, [{results, Results}])
+            Results = see_db_srv:search(list_to_binary(Query)),
+            JSONResults = [[{url, list_to_binary(URL)}, {title, Title}] || {URL, Title} <- Results],
+            respond_json(Req, [{results, JSONResults}])
     end;
 
 handle_request(Req, "/add") ->

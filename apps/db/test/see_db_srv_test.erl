@@ -2,18 +2,21 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(URL, "http://www.foo.com/").
+-define(TITLE, "title").
 -define(WORDS, <<"aaa ddd eee fff">>).
 
 -define(URL2, "http://url2/").
+-define(TITLE2, "title 2").
 -define(WORDS2, <<"bbb ddd eee ggg">>).
 
 -define(URL3, "http://url3/").
+-define(TITLE3, "title 3").
 -define(WORDS3, <<"ccc ddd fff ggg">>).
 
 -define(DOMAIN_FILTER, "foo").
 
--define(assert_search_result(URLs, Phrase),
-        ?_assertEqual(lists:sort(URLs), lists:sort(see_db_srv:search(Phrase)))).
+-define(assert_search_result(Results, Phrase),
+        ?_assertEqual(lists:sort(Results), lists:sort(see_db_srv:search(Phrase)))).
 
 start(Options) ->
     meck:new(see_text),
@@ -40,27 +43,27 @@ queued_page() ->
 
 visited_page() ->
     Pid = start(),
-    see_db_srv:visited(?URL, {data, ?WORDS}),
+    see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
     Pid.
 
 visited_many_pages() ->
     Pid = start(),
-    see_db_srv:visited(?URL, {data, ?WORDS}),
-    see_db_srv:visited(?URL2, {data, ?WORDS2}),
-    see_db_srv:visited(?URL3, {data, ?WORDS3}),
+    see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
+    see_db_srv:visited(?URL2, {data, ?TITLE2, ?WORDS2}),
+    see_db_srv:visited(?URL3, {data, ?TITLE3, ?WORDS3}),
     Pid.
 
 visited_many_same_pages() ->
     Pid = start(),
-    see_db_srv:visited(?URL, {data, ?WORDS}),
-    see_db_srv:visited(?URL2, {data, ?WORDS}),
-    see_db_srv:visited(?URL3, {data, ?WORDS}),
+    see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
+    see_db_srv:visited(?URL2, {data, ?TITLE2, ?WORDS}),
+    see_db_srv:visited(?URL3, {data, ?TITLE3, ?WORDS}),
     Pid.
 
 visited_page_has_changed() ->
     Pid = start(),
-    see_db_srv:visited(?URL, {data, ?WORDS}),
-    see_db_srv:visited(?URL, {data, ?WORDS2}),
+    see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
+    see_db_srv:visited(?URL, {data, ?TITLE2, ?WORDS2}),
     Pid.
 
 trigger_timeout(Pid) ->
@@ -135,7 +138,7 @@ when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() -
 when_all_pages_visited__next_returns_nothing_test_() ->
     {foreach, fun queued_page/0, fun stop/1,
      [fun(_) ->
-              see_db_srv:visited(?URL, {data, ?WORDS}),
+              see_db_srv:visited(?URL, {data, ?TITLE, ?WORDS}),
               ?_assertEqual(nothing, see_db_srv:next())
       end,
       fun(_) ->
@@ -169,35 +172,35 @@ when_word_is_not_present__search_returns_empty_list_test_() ->
 when_word_is_present_on_one_page__search_returns_single_page_list_test_() ->
     {setup, fun visited_page/0, fun stop/1,
      fun(_) ->
-             [?assert_search_result([?URL], Word) || Word <- binary:split(?WORDS, <<" ">>, [global])]
+             [?assert_search_result([{?URL, ?TITLE}], Word) || Word <- binary:split(?WORDS, <<" ">>, [global])]
      end}.
 
 when_phrase_is_present_on_one_page__search_returns_single_page_list_test_() ->
     {setup, fun visited_many_pages/0, fun stop/1,
      fun(_) ->
-             [?assert_search_result([?URL],  ?WORDS),
-              ?assert_search_result([?URL2], ?WORDS2),
-              ?assert_search_result([?URL3], ?WORDS3)]
+             [?assert_search_result([{?URL, ?TITLE}],  ?WORDS),
+              ?assert_search_result([{?URL2, ?TITLE2}], ?WORDS2),
+              ?assert_search_result([{?URL3, ?TITLE3}], ?WORDS3)]
      end}.
 
 when_word_is_present_on_many_pages__search_returns_them_all_test_() ->
     {setup, fun visited_many_pages/0, fun stop/1,
      fun(_) ->
-             [?assert_search_result([?URL], <<"aaa">>),
-              ?assert_search_result([?URL2], <<"bbb">>),
-              ?assert_search_result([?URL3], <<"ccc">>),
-              ?assert_search_result([?URL, ?URL2], <<"eee">>),
-              ?assert_search_result([?URL, ?URL3], <<"fff">>),
-              ?assert_search_result([?URL2, ?URL3], <<"ggg">>),
-              ?assert_search_result([?URL, ?URL2, ?URL3], <<"ddd">>)]
+             [?assert_search_result([{?URL, ?TITLE}], <<"aaa">>),
+              ?assert_search_result([{?URL2, ?TITLE2}], <<"bbb">>),
+              ?assert_search_result([{?URL3, ?TITLE3}], <<"ccc">>),
+              ?assert_search_result([{?URL, ?TITLE}, {?URL2, ?TITLE2}], <<"eee">>),
+              ?assert_search_result([{?URL, ?TITLE}, {?URL3, ?TITLE3}], <<"fff">>),
+              ?assert_search_result([{?URL2, ?TITLE2}, {?URL3, ?TITLE3}], <<"ggg">>),
+              ?assert_search_result([{?URL, ?TITLE}, {?URL2, ?TITLE2}, {?URL3, ?TITLE3}], <<"ddd">>)]
      end}.
 
 when_many_words_are_given__search_returns_pages_containing_all_of_them_test_() ->
     {setup, fun visited_many_same_pages/0, fun stop/1,
      fun(_) ->
-              [?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd">>),
-               ?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd eee">>),
-               ?assert_search_result([?URL, ?URL2, ?URL3], <<"aaa ddd eee fff">>),
+              [?assert_search_result([{?URL, ?TITLE}, {?URL2, ?TITLE2}, {?URL3, ?TITLE3}], <<"aaa ddd">>),
+               ?assert_search_result([{?URL, ?TITLE}, {?URL2, ?TITLE2}, {?URL3, ?TITLE3}], <<"aaa ddd eee">>),
+               ?assert_search_result([{?URL, ?TITLE}, {?URL2, ?TITLE2}, {?URL3, ?TITLE3}], <<"aaa ddd eee fff">>),
                ?assert_search_result([], <<"aaa bbb">>)]
      end}.
 
@@ -205,8 +208,8 @@ when_page_changes__search_returns_only_new_content_test_() ->
     {setup, fun visited_page_has_changed/0, fun stop/1,
      fun(_) ->
               [?assert_search_result([], <<"aaa">>),
-               ?assert_search_result([?URL], <<"ddd">>),
-               ?assert_search_result([?URL], <<"ggg">>)]
+               ?assert_search_result([{?URL, ?TITLE2}], <<"ddd">>),
+               ?assert_search_result([{?URL, ?TITLE2}], <<"ggg">>)]
      end}.
 
 when_encoded_url_is_queued__it_is_returned_decoded__test_() ->

@@ -18,7 +18,7 @@
 
 -record(state, {domain_filter = none, visiting_timeout = 30000}).
 
--record(page, {id, url, content, last_visit = erlang:timestamp()}).
+-record(page, {id, url, title, content, last_visit = erlang:timestamp()}).
 -record(index, {word, pages}).
 
 start(Options) ->
@@ -59,17 +59,13 @@ init(Options) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, {data, _Title, Data}}, State) ->
-    handle_cast({visited, URL, {data, Data}}, State);
-
-handle_cast({visited, URL, {data, Data}}, State) ->
+handle_cast({visited, URL, {data, Title, Data}}, State) ->
     case parse_url(URL) of
         {ok, ParsedURL} ->
             Words = see_text:extract_words(Data),
-            update_page(ParsedURL, Words),
-            Id = erlang:phash2(ParsedURL),
+            Id = update_page(ParsedURL, Title, Words),
             lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
-            error_logger:info_report([{url, ParsedURL}, {words, Words}]),
+            error_logger:info_report([{url, ParsedURL}, {title, Title}]),
             {noreply, State};
         error ->
             {noreply, State}
@@ -78,7 +74,7 @@ handle_cast({visited, URL, {data, Data}}, State) ->
 handle_cast({visited, URL, Content}, State) ->
     case parse_url(URL) of
         {ok, ParsedURL} ->
-            update_page(ParsedURL, Content),
+            update_page(ParsedURL, [], Content),
             {noreply, State};
         error ->
             {noreply, State}
@@ -115,7 +111,7 @@ handle_call(next, _, State) ->
 handle_call({search, Query}, _, State) ->
     Words = see_text:extract_words(Query),
     PageLists = [get_pages(Word) || Word <- Words],
-    Result = [get_url(Id) || Id <- merge_page_lists(PageLists)],
+    Result = [get_page(Id) || Id <- merge_page_lists(PageLists)],
     error_logger:info_report([{query, Query}, {results, Result}]),
     {reply, Result, State}.
 
@@ -161,10 +157,11 @@ queue_url(URL) ->
             ok
     end.
 
-update_page(URL, Content) ->
+update_page(URL, Title, Content) ->
     Id = erlang:phash2(URL),
     remove_page_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, content = Content}).
+    ets:insert(see_pages, #page{id = Id, url = URL, title = Title, content = Content}),
+    Id.
 
 remove_page_from_index(Id) ->
     case ets:lookup(see_pages, Id) of
@@ -190,9 +187,9 @@ insert_to_index(Word, Id) ->
             ets:insert(see_index, #index{word = Word, pages = sets:from_list([Id])})
     end.
 
-get_url(Id) ->
-    [#page{url = URL}] = ets:lookup(see_pages, Id),
-    mochiweb_util:urlunsplit(URL).
+get_page(Id) ->
+    [#page{title = Title, url = URL}] = ets:lookup(see_pages, Id),
+    {mochiweb_util:urlunsplit(URL), Title}.
 
 get_pages(Word) ->
     case ets:lookup(see_index, Word) of

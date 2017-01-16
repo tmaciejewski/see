@@ -51,8 +51,12 @@
         <script type="text/template" id="search-result-template">
             <% if (results.length > 0) { %>
                 <div class="list-group">
-                    <% _.each(results, function(url) { %>
-                        <a class="list-group-item" href="<%= url %>"><h4><%= url %></h4></a>
+                    <% _.each(results, function(result) { %>
+                        <a class="list-group-item" href="<%= result.url %>">
+                            <h4>
+                                <% if (result.title.length > 0) print(result.title); else print(result.url); %>
+                            </h4>
+                        </a>
                     <% }); %>
                 </ol>
             <% } else { %>

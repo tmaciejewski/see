@@ -48,13 +48,14 @@ wait_for_indexing() ->
             ok
     end.
 
-assert_search_result(URL, Phrase, Pages) ->
-    Results = lists:sort([URL ++ Page || Page <- Pages]),
+assert_search_result(RootURL, Phrase, Pages) ->
+    Results = lists:sort([{RootURL ++ URL, Title} || {URL, Title} <- Pages]),
+    error_logger:info_report([{results, Results}]),
     Results = lists:sort(see_db_srv:search(Phrase)).
 
 integration_test(Config) ->
     URL = proplists:get_value(url, Config),
-    assert_search_result(URL, <<"Chopin">>, ["/", "/Frederic Chopin.txt", "/Franz Liszt.txt"]),
-    assert_search_result(URL, <<"Żelazowa Wola"/utf8>>, ["/Frederic Chopin.txt"]),
-    assert_search_result(URL, <<"Alan Turing enigma">>, ["/Alan Turing.txt"]),
-    assert_search_result(URL, <<"Alan Turing">>, ["/", "/Alan Turing.txt"]).
+    assert_search_result(URL, <<"Chopin">>, [{"/", []}, {"/Frederic Chopin.txt", []}, {"/Franz Liszt.txt", []}]),
+    assert_search_result(URL, <<"Żelazowa Wola"/utf8>>, [{"/Frederic Chopin.txt", []}]),
+    assert_search_result(URL, <<"Alan Turing enigma">>, [{"/Alan Turing.html", [<<"Wikipedia - Alan Turing">>]}]),
+    assert_search_result(URL, <<"Alan Turing">>, [{"/", []}, {"/Alan Turing.html", [<<"Wikipedia - Alan Turing">>]}]).
