@@ -1,6 +1,8 @@
 -module(see_crawler_worker).
 -behaviour(gen_server).
 
+-include_lib("hackney/include/hackney_lib.hrl").
+
 -export([start_link/1,
          stop/1]).
 
@@ -30,12 +32,12 @@ init(Options) ->
 
 handle_info(timeout, State) ->
     DbNode = State#state.db_node,
-    case rpc:call(DbNode, see_db_srv, next, []) of
+    case see_db_proxy:next(DbNode) of
         nothing ->
             error_logger:info_msg("Nothing to do"),
             {noreply, State, ?IDLE_TIMEOUT};
         {ok, Next} ->
-            error_logger:info_msg("Visiting " ++ Next),
+            error_logger:info_msg("Visiting ~ts", [Next]),
             visit(DbNode, Next),
             {noreply, State, ?BUSY_TIMEOUT};
         {badrpc, Reason} ->
@@ -66,30 +68,26 @@ visit(DbNode, URL) ->
             Text = see_html:text(Page),
             Links = [absolute_link(URL, Link) || Link <- see_html:links(Page)],
             error_logger:info_report([{url, URL}, {title, Title}, {links, Links}]),
-            rpc:cast(DbNode, see_db_srv, visited, [URL, {data, Title, Text}]),
-            lists:foreach(fun(Link) -> rpc:cast(DbNode, see_db_srv, queue, [Link]) end, Links);
+            see_db_proxy:visited(DbNode, URL, {data, Title, Text}),
+            lists:foreach(fun(Link) -> see_db_proxy:queue(DbNode, Link) end, Links);
         binary ->
-            rpc:cast(DbNode, see_db_srv, visited, [URL, binary]);
+            see_db_proxy:visited(DbNode, URL, binary);
         {redirect, RedirectURL} ->
             error_logger:info_report([{url, URL}, {redirect, RedirectURL}]),
-            rpc:cast(DbNode, see_db_srv, visited, [URL, {redirect, RedirectURL}]),
-            rpc:cast(DbNode, see_db_srv, queue, [RedirectURL]);
+            see_db_proxy:visited(DbNode, URL, {redirect, RedirectURL}),
+            see_db_proxy:queue(DbNode, RedirectURL);
         {error, Reason} ->
             error_logger:error_report([{url, URL}, {error, Reason}]),
-            rpc:cast(DbNode, see_db_srv, visited, [URL, {error, Reason}])
+            see_db_proxy:visited(DbNode, URL, {error, Reason})
     end.
 
 absolute_link(URL, Link) ->
-    {URLScheme, URLNetloc, URLPath, _, _} = mochiweb_util:urlsplit(URL),
-    case mochiweb_util:urlsplit(Link) of
-        {[], [], "/" ++ LinkPath, LinkQuery, _} ->
-            mochiweb_util:urlunsplit({URLScheme, URLNetloc, "/" ++ LinkPath, LinkQuery, []});
-        {[], [], LinkPath, LinkQuery, _} when length(URLPath) == 0 ->
-            Dir = "/",
-            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
-        {[], [], LinkPath, LinkQuery, _} ->
-            Dir = filename:dirname(URLPath),
-            mochiweb_util:urlunsplit({URLScheme, URLNetloc, filename:join(Dir, LinkPath), LinkQuery, []});
-        {LinkScheme, LinkNetloc, LinkPath, LinkQuery, _} ->
-            mochiweb_util:urlunsplit({LinkScheme, LinkNetloc, LinkPath, LinkQuery, []})
+    ParsedURL = hackney_url:parse_url(URL),
+    case re:run(Link, <<"[^/]+://">>) of
+        nomatch ->
+            DirName = filename:dirname(ParsedURL#hackney_url.path),
+            Path = filename:absname(Link, DirName),
+            hackney_url:unparse_url(ParsedURL#hackney_url{path = Path});
+        _ ->
+            Link
     end.

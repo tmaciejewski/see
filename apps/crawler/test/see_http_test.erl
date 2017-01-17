@@ -4,15 +4,15 @@
 -define(URL, "http://www.foo.com").
 
 start() ->
-    meck:new(httpc),
+    meck:new(hackney),
     ok.
 
 stop(_) ->
-    ?assert(meck:validate(httpc)),
-    meck:unload(httpc).
+    ?assert(meck:validate(hackney)),
+    meck:unload(hackney).
 
 expect_http_request(URL, Result) ->
-    meck:expect(httpc, request, [{[get, {URL, '_'}, '_', '_'], Result}]).
+    meck:expect(hackney, request, [{[get, URL, '_', '_', '_'], Result}]).
 
 http_error_test_() ->
     {setup, fun start/0, fun stop/1,
@@ -22,62 +22,59 @@ http_error_test_() ->
              ?_assertEqual({error, Reason}, see_http:get_page(?URL))
      end}.
 
-binary_blob_test_() ->
+no_content_type_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             Headers = [{"content-type", "application/octet-stream"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, ""},
-             expect_http_request(?URL, {ok, Page}),
+             Headers = [],
+             expect_http_request(?URL, {ok, 200, Headers, make_ref()}),
              ?_assertEqual(binary, see_http:get_page(?URL))
      end}.
 
-code_301_test_() ->
+binary_blob_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             RedirectURL = "redirect url",
-             Headers = [{"location", RedirectURL}],
-             Page = {{"HTTP/1.1", 301, "OK"}, Headers, []},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({redirect, RedirectURL}, see_http:get_page(?URL))
+             Headers = [{<<"Content-Type">>, <<"application/octet-stream">>}],
+             expect_http_request(?URL, {ok, 200, Headers, make_ref()}),
+             ?_assertEqual(binary, see_http:get_page(?URL))
      end}.
 
-code_302_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             RedirectURL = "redirect url",
-             Headers = [{"location", RedirectURL}],
-             Page = {{"HTTP/1.1", 302, "OK"}, Headers, []},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({redirect, RedirectURL}, see_http:get_page(?URL))
-     end}.
+redirect_test_() ->
+    {foreach, fun start/0, fun stop/1,
+     [fun(_) ->
+              RedirectURL = <<"redirect url">>,
+              Headers = [{<<"Location">>, RedirectURL}],
+              expect_http_request(?URL, {ok, 301, Headers, make_ref()}),
+              ?_assertEqual({redirect, RedirectURL}, see_http:get_page(?URL))
+      end,
+      fun(_) ->
+              RedirectURL = <<"redirect url">>,
+              Headers = [{<<"Location">>, RedirectURL}],
+              expect_http_request(?URL, {ok, 302, Headers, make_ref()}),
+              ?_assertEqual({redirect, RedirectURL}, see_http:get_page(?URL))
+      end,
+      fun(_) ->
+              RedirectURL = <<"redirect url">>,
+              Headers = [{<<"other-header">>, <<"foo">>}],
+              expect_http_request(?URL, {ok, 302, Headers, make_ref()}),
+              ?_assertEqual({error, Headers}, see_http:get_page(?URL))
+      end]}.
 
 unknown_code_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              Headers = headers,
-             Content = content,
              Code = 666,
-             Page = {{"HTTP/1.1", Code, "OK"}, Headers, Content},
-             expect_http_request(?URL, {ok, Page}),
-             ?_assertEqual({error, {Code, Headers, Content}}, see_http:get_page(?URL))
+             expect_http_request(?URL, {ok, Code, Headers, make_ref()}),
+             ?_assertEqual({error, {Code, Headers}}, see_http:get_page(?URL))
      end}.
 
 ok_code_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             Content = "content",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request(?URL, {ok, Page}),
+             Content = <<"content">>,
+             Headers = [{<<"Content-Type">>, <<"text/plain">>}],
+             Ref = make_ref(),
+             expect_http_request(?URL, {ok, 200, Headers, Ref}),
+             meck:expect(hackney, body, [{[Ref, '_'], {ok, Content}}]),
              ?_assertEqual({ok, Content}, see_http:get_page(?URL))
-     end}.
-
-url_encoding_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             Content = "content",
-             Headers = [{"content-type", "text/plain"}],
-             Page = {{"HTTP/1.1", 200, "OK"}, Headers, Content},
-             expect_http_request("http://localhost/foo/lorem%20ipsum", {ok, Page}),
-             ?_assertEqual({ok, Content}, see_http:get_page("http://localhost/foo/lorem ipsum"))
      end}.

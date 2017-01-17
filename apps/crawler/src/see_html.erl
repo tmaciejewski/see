@@ -67,7 +67,7 @@ links({?A_TAG, Attributes, Children}, Links) ->
         ?HREF_ATTR ->
             Links;
         Link ->
-            [binary_to_list(Link) | Links]
+            [Link | Links]
     end,
     links({?A_TAG, [], Children}, NewLinks);
 
@@ -80,7 +80,7 @@ links(_, Links) ->
 title(Page) ->
     lists:flatten(title(Page, [])).
 
-title({?TITLE_TAG, Attr, Children}, Title) ->
+title({?TITLE_TAG, Attr, Children}, _) ->
     text({?TITLE_TAG, Attr, Children});
 
 title({Tag, Attr, [Child | Children]}, _) ->

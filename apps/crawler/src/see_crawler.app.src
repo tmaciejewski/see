@@ -15,7 +15,8 @@
     {applications, [
         kernel,
         stdlib,
-        inets
+        mochiweb,
+        hackney
     ]},
     {mod, {see_crawler_app, []}},
     {env, [

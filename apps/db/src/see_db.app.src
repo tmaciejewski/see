@@ -16,7 +16,8 @@
     ]},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        mochiweb
     ]},
     {mod, {see_db_app, []}},
     {env, [

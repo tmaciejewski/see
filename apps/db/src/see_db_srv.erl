@@ -1,6 +1,8 @@
 -module(see_db_srv).
 -behaviour(gen_server).
 
+-include_lib("hackney/include/hackney_lib.hrl").
+
 -export([start/1,
          start_link/1,
          stop/0,
@@ -30,10 +32,10 @@ start_link(Options) ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-visited(URL, Content) when is_list(URL) ->
+visited(URL, Content) when is_binary(URL) ->
     gen_server:cast(?MODULE, {visited, URL, Content}).
 
-queue(URL) when is_list(URL) ->
+queue(URL) when is_binary(URL) ->
     gen_server:call(?MODULE, {queue, URL}).
 
 next() ->
@@ -103,7 +105,7 @@ handle_call(next, _, State) ->
         {[Page = #page{url = URL}], _} ->
             timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page#page.id}),
             ets:insert(see_pages, Page#page{last_visit = pending}),
-            {reply, {ok, mochiweb_util:urlunsplit(URL)}, State};
+            {reply, {ok, hackney_url:unparse_url(URL)}, State};
         '$end_of_table' ->
             {reply, nothing, State}
     end;
@@ -130,22 +132,17 @@ code_change(_OldVsn, State, _) ->
 %----------------------------------------------------------
 
 parse_url(URL) ->
-    {Schema, Netloc, Path, Query, _} = mochiweb_util:urlsplit(URL),
-    parse_url(string:to_lower(Schema), string:to_lower(Netloc), Path, Query).
-
-parse_url("http", Netloc, [], Query) ->
-    {ok, {"http", Netloc, "/", Query, []}};
-
-parse_url("http", Netloc, Path, Query) ->
-    {ok, {"http", Netloc, http_uri:decode(Path), http_uri:decode(Query), []}};
-
-parse_url(_, _, _, _) ->
-    error.
+    case catch(hackney_url:normalize(hackney_url:urldecode(URL))) of
+        {'EXIT', _Reason} ->
+            error;
+        ParsedURL ->
+            {ok, ParsedURL#hackney_url{fragment = <<>>}}
+    end.
 
 filter_url(_, none) ->
     ok;
 
-filter_url({_, Netloc, _, _, _}, DomainFilter) ->
+filter_url(#hackney_url{netloc = Netloc}, DomainFilter) ->
     case re:run(Netloc, DomainFilter) of
         {match, _} ->
             ok;
@@ -194,7 +191,7 @@ insert_to_index(Word, Id) ->
 
 get_page(Id) ->
     [#page{title = Title, url = URL}] = ets:lookup(see_pages, Id),
-    {mochiweb_util:urlunsplit(URL), Title}.
+    {hackney_url:unparse_url(URL), Title}.
 
 get_pages(Word) ->
     case ets:lookup(see_index, Word) of

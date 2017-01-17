@@ -1,15 +1,15 @@
 -module(see_db_srv_test).
 -include_lib("eunit/include/eunit.hrl").
 
--define(URL, "http://www.foo.com/").
+-define(URL, <<"http://www.foo.com/">>).
 -define(TITLE, "title").
 -define(WORDS, <<"aaa ddd eee fff">>).
 
--define(URL2, "http://url2/").
+-define(URL2, <<"http://url2/">>).
 -define(TITLE2, "title 2").
 -define(WORDS2, <<"bbb ddd eee ggg">>).
 
--define(URL3, "http://url3/").
+-define(URL3, <<"http://url3/">>).
 -define(TITLE3, "title 3").
 -define(WORDS3, <<"ccc ddd fff ggg">>).
 
@@ -90,41 +90,47 @@ when_url_is_queued_many_times__it_is_returned_only_once__test_() ->
      fun(_) ->
              [?_assertEqual(ok, see_db_srv:queue(?URL)),
               ?_assertEqual(ok, see_db_srv:queue(?URL)),
-              ?_assertEqual(ok, see_db_srv:queue(string:to_upper(?URL))),
+              ?_assertEqual(ok, see_db_srv:queue(<<"http://WWW.FOO.COM/">>)),
               ?_assertEqual({ok, ?URL}, see_db_srv:next()),
               ?_assertEqual(nothing, see_db_srv:next())]
+     end}.
+
+when_url_has_no_schema__set_http_as_default_test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             [?_assertEqual(ok, see_db_srv:queue(<<"www.url.com">>)),
+              ?_assertEqual({ok, <<"http://www.url.com/">>}, see_db_srv:next())]
      end}.
 
 when_url_is_invalid__queue_returns_error_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             [?_assertEqual(error, see_db_srv:queue("www.wrong.url")),
-              ?_assertEqual(error, see_db_srv:queue("ftp://www.wrong.url")),
-              ?_assertEqual(error, see_db_srv:queue("https://www.wrong.url"))]
+             [?_assertEqual(error, see_db_srv:queue(<<"ftp://www.wrong.url">>)),
+              ?_assertEqual(error, see_db_srv:queue(<<"www:wrong:url">>))]
      end}.
 
 when_queued_url_with_no_path__root_path_is_added__test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             URL = "http://www.url.com",
+             URL = <<"http://www.url.com">>,
              [?_assertEqual(ok, see_db_srv:queue(URL)),
-              ?_assertEqual({ok, URL ++ "/"}, see_db_srv:next())]
+              ?_assertEqual({ok, <<URL/binary, "/">>}, see_db_srv:next())]
      end}.
 
 when_queued_url_with_fragment__fragment_is_discared__test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             URL = "http://www.url.com/foo?query",
-             [?_assertEqual(ok, see_db_srv:queue(URL ++ "#fragment")),
+             URL = <<"http://www.url.com/foo?query">>,
+             [?_assertEqual(ok, see_db_srv:queue(<<URL/binary, "#fragment">>)),
               ?_assertEqual({ok, URL}, see_db_srv:next())]
      end}.
 
 when_domain_filter_is_given__queueing_only_accepts_matching_urls__test_() ->
     {setup, fun start_with_domain_filter/0, fun stop/1,
      fun(_) ->
-             [?_assertEqual(ok, see_db_srv:queue("http://www.foo.com")),
-              ?_assertEqual(ok, see_db_srv:queue("http://www.foo.bar.com")),
-              ?_assertEqual(error, see_db_srv:queue("http://www.bar.com/foo"))]
+             [?_assertEqual(ok, see_db_srv:queue(<<"http://www.foo.com">>)),
+              ?_assertEqual(ok, see_db_srv:queue(<<"http://www.foo.bar.com">>)),
+              ?_assertEqual(error, see_db_srv:queue(<<"http://www.bar.com/foo">>))]
      end}.
 
 when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() ->
@@ -224,6 +230,6 @@ when_page_changes__search_returns_only_new_content_test_() ->
 when_encoded_url_is_queued__it_is_returned_decoded__test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             [?_assertEqual(ok, see_db_srv:queue("http://localhost/a%20b.txt?foo%20bar")),
-              ?_assertEqual({ok, "http://localhost/a b.txt?foo bar"}, see_db_srv:next())]
+             [?_assertEqual(ok, see_db_srv:queue(<<"https://pl.wikipedia.org/wiki/Wikipedia:Strona_główna"/utf8>>)),
+              ?_assertEqual({ok, <<"https://pl.wikipedia.org/wiki/Wikipedia:Strona_g%c5%82%c3%b3wna">>}, see_db_srv:next())]
      end}.

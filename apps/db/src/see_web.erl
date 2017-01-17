@@ -40,7 +40,7 @@ handle_request(Req, "/search") ->
             respond_json(Req, [{results, []}]);
         Query ->
             Results = see_db_srv:search(list_to_binary(Query)),
-            JSONResults = [[{url, list_to_binary(URL)}, {title, Title}] || {URL, Title} <- Results],
+            JSONResults = [[{url, URL}, {title, Title}] || {URL, Title} <- Results],
             respond_json(Req, [{results, JSONResults}])
     end;
 
@@ -50,7 +50,7 @@ handle_request(Req, "/add") ->
         undefined ->
             respond_json(Req, [{result, error}]);
         URL ->
-            case see_db_srv:queue(URL) of
+            case see_db_srv:queue(list_to_binary(URL)) of
                 ok ->
                     respond_json(Req, [{result, ok}]);
                 error ->

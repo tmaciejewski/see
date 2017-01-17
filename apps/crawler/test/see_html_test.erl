@@ -18,4 +18,4 @@ title_test_() ->
 
 links_test_() ->
     Page = see_html:parse("<html><a href=url1>link1</a></html> <a href='url2'>link2</a> <a>bad link</a> <a href>bad link</a>"),
-    ?_assertEqual(["url1", "url2"], see_html:links(Page)).
+    ?_assertEqual([<<"url1">>, <<"url2">>], see_html:links(Page)).
