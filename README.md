@@ -43,7 +43,6 @@ unvisited URLs.
 
 ## TODO
 
-* https support
 * different encoding support (eg. 1250cp)
 * ranking
 * stemming
