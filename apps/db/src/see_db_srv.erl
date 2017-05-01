@@ -18,10 +18,9 @@
          terminate/2,
          code_change/3]).
 
--record(state, {domain_filter = none, visiting_timeout = 30000}).
+-define(MAX_RESULTS, 100).
 
--record(page, {id, url, title, content, last_visit = erlang:timestamp()}).
--record(index, {word, pages}).
+-record(state, {storage, domain_filter = none, visiting_timeout = 30000}).
 
 start(Options) ->
     gen_server:start({local, ?MODULE}, ?MODULE, Options, []).
@@ -47,13 +46,13 @@ search(Query) when is_binary(Query) ->
 %----------------------------------------------------------
 
 init(Options) ->
-    ets:new(see_pages, [named_table, {keypos, #page.id}]),
-    ets:new(see_index, [named_table, {keypos, #index.word}]),
+    Storage = proplists:get_value(storage, Options),
+    Storage:init(),
     case proplists:get_value(domain_filter, Options) of
         undefined ->
-            {ok, #state{domain_filter = none}};
+            {ok, #state{storage = Storage ,domain_filter = none}};
         DomainFilter when is_list(DomainFilter) ->
-            {ok, #state{domain_filter = DomainFilter}};
+            {ok, #state{storage = Storage, domain_filter = DomainFilter}};
         _ ->
             {stop, wrong_domain_filter}
     end.
@@ -61,70 +60,55 @@ init(Options) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, {data, Title, Data}}, State) ->
-    case parse_url(URL) of
-        {ok, ParsedURL} ->
-            Words = see_text:extract_words(Data),
-            Id = update_page(ParsedURL, Title, Words),
-            lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words),
-            error_logger:info_report([{url, ParsedURL}, {title, Title}]),
-            {noreply, State};
-        error ->
-            {noreply, State}
-    end;
+handle_cast({visited, URL, {data, Title, Data}}, State = #state{storage = Storage}) ->
+    %TODO kill the timer
+    Words = see_text:extract_words(Data),
+    Storage:update_url(URL, Title, Words),
+    error_logger:info_report([{url, URL}, {title, Title}]),
+    {noreply, State};
 
-handle_cast({visited, URL, Content}, State) ->
-    case parse_url(URL) of
-        {ok, ParsedURL} ->
-            update_page(ParsedURL, [], Content),
-            {noreply, State};
-        error ->
-            {noreply, State}
-    end.
+handle_cast({visited, URL, Content}, State = #state{storage = Storage}) ->
+    Storage:update_url(URL, Content),
+    {noreply, State}.
 
 handle_call(stop, _, State) ->
     {stop, shutdown, ok, State};
 
-handle_call({queue, URL}, _, State) ->
+handle_call({queue, URL}, _, State = #state{storage = Storage}) ->
     case parse_url(URL) of
         {ok, ParsedURL} ->
             case filter_url(ParsedURL, State#state.domain_filter) of
-                ok ->
+                match ->
                     error_logger:info_report([{queued, ParsedURL}]),
-                    queue_url(ParsedURL),
+                    Storage:add_url(hackney_url:unparse_url(ParsedURL)),
                     {reply, ok, State};
-                error ->
-                    {reply, error, State}
+                nomatch ->
+                    {reply, filter_mismatch, State}
             end;
         error ->
-            {reply, error, State}
+            {reply, url_error, State}
     end;
 
-handle_call(next, _, State) ->
-    case ets:match_object(see_pages, #page{last_visit = null, _ = '_'}, 1) of
-        {[Page = #page{url = URL}], _} ->
-            timer:send_after(State#state.visiting_timeout, {visiting_timeout, Page#page.id}),
-            ets:insert(see_pages, Page#page{last_visit = pending}),
-            {reply, {ok, hackney_url:unparse_url(URL)}, State};
-        '$end_of_table' ->
+handle_call(next, _, State = #state{storage = Storage}) ->
+    case Storage:get_unvisited() of
+        {ok, URL} ->
+            timer:send_after(State#state.visiting_timeout, {visiting_timeout, URL}),
+            {reply, {ok, URL}, State};
+        nothing ->
             {reply, nothing, State}
     end;
 
-handle_call({search, Query}, _, State) ->
+handle_call({search, Query}, _, State = #state{storage = Storage}) ->
     Words = see_text:extract_words(Query),
-    PageLists = [get_pages(Word) || Word <- Words],
-    Result = [get_page(Id) || Id <- merge_page_lists(PageLists)],
-    error_logger:info_report([{query, Query}, {results, Result}]),
-    {reply, Result, State}.
+    PageLists = [Storage:get_pages_from_index(Word) || Word <- Words],
+    ResultList = lists:sublist(merge_page_lists(PageLists), ?MAX_RESULTS),
+    ResultPages = [Storage:get_page(Id) || Id <- ResultList],
+    error_logger:info_report([{query, Query}, {results, ResultPages}]),
+    {reply, ResultPages, State}.
 
-handle_info({visiting_timeout, Id}, State) ->
-    case ets:lookup(see_pages, Id) of
-        [Page = #page{last_visit = pending}] ->
-            ets:insert(see_pages, Page#page{last_visit = null}),
-            {noreply, State};
-        _  ->
-            {noreply, State}
-    end.
+handle_info({visiting_timeout, URL}, State = #state{storage = Storage}) ->
+    Storage:set_unvisited(URL),
+    {noreply, State}.
 
 code_change(_OldVsn, State, _) ->
     {ok, State}.
@@ -140,65 +124,14 @@ parse_url(URL) ->
     end.
 
 filter_url(_, none) ->
-    ok;
+    match;
 
 filter_url(#hackney_url{netloc = Netloc}, DomainFilter) ->
     case re:run(Netloc, DomainFilter) of
         {match, _} ->
-            ok;
+            match;
         nomatch ->
-            error
-    end.
-
-queue_url(URL) ->
-    Id = erlang:phash2(URL),
-    case ets:lookup(see_pages, Id) of
-        [] ->
-            ets:insert(see_pages, #page{id = Id, url = URL, last_visit = null});
-        _ ->
-            ok
-    end.
-
-update_page(URL, Title, Content) ->
-    Id = erlang:phash2(URL),
-    remove_page_from_index(Id),
-    ets:insert(see_pages, #page{id = Id, url = URL, title = Title, content = Content}),
-    Id.
-
-remove_page_from_index(Id) ->
-    case ets:lookup(see_pages, Id) of
-        [#page{content = Words}] when is_list(Words) ->
-            lists:foreach(fun(Word) -> remove_page_from_word(Word, Id) end, Words);
-        _Other ->
-            ok
-    end.
-
-remove_page_from_word(Word, Id) ->
-    case ets:lookup(see_index, Word) of
-        [] ->
-            ok;
-        [#index{pages = Pages}] ->
-            ets:insert(see_index, #index{word = Word, pages = sets:del_element(Id, Pages)})
-    end.
-
-insert_to_index(Word, Id) ->
-    case ets:lookup(see_index, Word) of
-        [#index{pages = Pages}] ->
-            ets:insert(see_index, #index{word = Word, pages = sets:add_element(Id, Pages)});
-        [] ->
-            ets:insert(see_index, #index{word = Word, pages = sets:from_list([Id])})
-    end.
-
-get_page(Id) ->
-    [#page{title = Title, url = URL}] = ets:lookup(see_pages, Id),
-    {hackney_url:unparse_url(URL), Title}.
-
-get_pages(Word) ->
-    case ets:lookup(see_index, Word) of
-        [] ->
-            sets:new();
-        [#index{pages = Pages}] ->
-            Pages
+            nomatch
     end.
 
 merge_page_lists([]) ->
