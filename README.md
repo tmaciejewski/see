@@ -2,17 +2,18 @@
 
 SEE (or see, whatever) is a simple search engine written in Erlang. So
 far it can crawl through web indexing new pages into ets table. It's split
-into two applications:
+up into two applications:
 
 * `see_db`
 * `see_crawler`
 
 ## see_db
 
-This application handles indexing and the web interface.
+This application handles indexing and web interface.
 There could be only one node running this application.
-
-Currently it stores data in ETS table, so it's not persistent.
+It allows to choose storage option by `storage` option 
+in app file. Currently only ETS table is supported, 
+so it's not persistent.
 
 To start the application, run `start_db_node`
 
@@ -20,11 +21,12 @@ Application parameters:
 * `ip` (eg. `{0,0,0,0}`) -- web server ip address
 * `port` (eg. `8888`) -- web server port
 * `domain_filter` (eg. `"^localhost"`) -- regexp filter for URLs (useful for narrowing searching for only specific domain)
+* `storage` -- storage module
 
 ## see_crawler
 
 This application is responsible for crawling the web.
-There may be many nodes runnign this application.
+There may be many nodes running this application.
 
 To start the application, run `start_crawler_node`.
 
