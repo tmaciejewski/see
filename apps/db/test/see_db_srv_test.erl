@@ -35,8 +35,11 @@ stop(_) ->
     meck:unload(see_db_storage),
     see_db_srv:stop().
 
+find_timer(Pid) ->
+    ets:match(timer_tab, {'_', timeout, {timer, send, [Pid, '$1']}}).
+
 trigger_timeout(Pid) ->
-    [[Msg]] = ets:match(timer_tab, {'_', timeout, {timer, send, [Pid, '$1']}}),
+    [[Msg]] = find_timer(Pid),
     Pid ! Msg.
 
 when_no_queued_urls__next_returns_nothing_test_() ->
@@ -120,11 +123,12 @@ when_visited_is_called__update_url_in_the_storage__test_() ->
     {setup, fun start/0, fun stop/1,
      fun(Pid) ->
              meck:expect(see_text, extract_words, fun(words) -> extract_words end),
-             meck:expect(see_db_storage, update_url, [{[?URL, content], ok}]),
-             meck:expect(see_db_storage, update_url, [{[?URL, ?TITLE, extract_words], ok}]),
+             meck:expect(see_db_storage, update_url, [{[?URL, binary, content], ok},
+                                                      {[?URL, ?TITLE, extract_words], ok}]),
 
              [?_assertEqual(ok, see_db_srv:visited(?URL, {data, ?TITLE, words})),
-              ?_assertEqual(ok, see_db_srv:visited(?URL, content))]
+              ?_assertEqual(ok, see_db_srv:visited(?URL, content)),
+              ?_assertEqual([], find_timer(Pid))]
      end}.
 
 when_phrase_is_empty__search_returns_empty_list_test_() ->

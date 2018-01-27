@@ -20,7 +20,7 @@
 
 -define(MAX_RESULTS, 100).
 
--record(state, {storage, domain_filter = none, visiting_timeout = 30000}).
+-record(state, {storage, timers = maps:new(), domain_filter = none, visiting_timeout = 30000}).
 
 start(Options) ->
     gen_server:start({local, ?MODULE}, ?MODULE, Options, []).
@@ -60,16 +60,17 @@ init(Options) ->
 terminate(_, _) ->
     ok.
 
-handle_cast({visited, URL, {data, Title, Data}}, State = #state{storage = Storage}) ->
-    %TODO kill the timer
+handle_cast({visited, URL, {data, Title, Data}}, State = #state{storage = Storage, timers = Timers}) ->
+    cancel_timer(URL, Timers),
     Words = see_text:extract_words(Data),
     Storage:update_url(URL, Title, Words),
     error_logger:info_report([{url, URL}, {title, Title}]),
-    {noreply, State};
+    {noreply, State#state{timers = maps:remove(URL, Timers)}};
 
-handle_cast({visited, URL, Content}, State = #state{storage = Storage}) ->
-    Storage:update_url(URL, Content),
-    {noreply, State}.
+handle_cast({visited, URL, Content}, State = #state{storage = Storage, timers = Timers}) ->
+    cancel_timer(URL, Timers),
+    Storage:update_url(URL, binary, Content),
+    {noreply, State#state{timers = maps:remove(URL, Timers)}}.
 
 handle_call(stop, _, State) ->
     {stop, shutdown, ok, State};
@@ -89,11 +90,11 @@ handle_call({queue, URL}, _, State = #state{storage = Storage}) ->
             {reply, url_error, State}
     end;
 
-handle_call(next, _, State = #state{storage = Storage}) ->
+handle_call(next, _, State = #state{storage = Storage, timers = Timers}) ->
     case Storage:get_unvisited() of
         {ok, URL} ->
-            timer:send_after(State#state.visiting_timeout, {visiting_timeout, URL}),
-            {reply, {ok, URL}, State};
+            {ok, Timer} = timer:send_after(State#state.visiting_timeout, {visiting_timeout, URL}),
+            {reply, {ok, URL}, State#state{timers = maps:put(URL, Timer, Timers)}};
         nothing ->
             {reply, nothing, State}
     end;
@@ -106,9 +107,9 @@ handle_call({search, Query}, _, State = #state{storage = Storage}) ->
     error_logger:info_report([{query, Query}, {results, ResultPages}]),
     {reply, ResultPages, State}.
 
-handle_info({visiting_timeout, URL}, State = #state{storage = Storage}) ->
+handle_info({visiting_timeout, URL}, State = #state{storage = Storage, timers = Timers}) ->
     Storage:set_unvisited(URL),
-    {noreply, State}.
+    {noreply, State#state{timers = maps:remove(URL, Timers)}}.
 
 code_change(_OldVsn, State, _) ->
     {ok, State}.
@@ -139,3 +140,11 @@ merge_page_lists([]) ->
 
 merge_page_lists(PageLists) ->
     sets:to_list(sets:intersection(PageLists)).
+
+cancel_timer(URL, Timers) ->
+    case maps:get(URL, Timers, no_key) of
+        no_key ->
+            ok;
+        Timer ->
+            timer:cancel(Timer)
+    end.
