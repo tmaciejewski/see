@@ -4,7 +4,6 @@
 -record(index, {word, pages}).
 
 -export([init/0,
-         update_url/2,
          update_url/3,
          add_url/1,
          get_unvisited/0,
@@ -13,31 +12,23 @@
          get_pages_from_index/1]).
 
 init() ->
-    ets:new(see_pages, [named_table, {keypos, #page.id}]),
-    ets:new(see_index, [named_table, {keypos, #index.word}]).
-
-update_url(URL, Content) ->
-    Id = erlang:phash2(URL),
-    case remove_page(Id) of
-        ok ->
-            ets:insert(see_pages, #page{id = Id, url = URL, title = [], content = Content});
-        not_found ->
-            not_found
-    end.
+    %TODO: convert to gen_server due to ets access
+    ets:new(see_pages, [named_table, public, {keypos, #page.id}]),
+    ets:new(see_index, [named_table, public, {keypos, #index.word}]).
 
 update_url(URL, Title, Words) ->
     Id = erlang:phash2(URL),
     case remove_page(Id) of
         ok ->
             ets:insert(see_pages, #page{id = Id, url = URL, title = Title, content = Words}),
-            lists:foreach(fun(Word) -> insert_to_index(Word, Id) end, Words);
+            insert_words_to_index(Words, Id);
         not_found ->
             not_found
     end.
 
 remove_page(Id) ->
     case ets:lookup(see_pages, Id) of
-        [#page{last_visit = pending, content = Words}] when is_list(Words) ->
+        [#page{content = Words}] when is_list(Words) ->
             lists:foreach(fun(Word) -> remove_from_index(Word, Id) end, Words);
         [#page{last_visit = pending}] ->
             ok;
@@ -53,7 +44,13 @@ remove_from_index(Word, Id) ->
             ets:insert(see_index, #index{word = Word, pages = sets:del_element(Id, Pages)})
     end.
 
-insert_to_index(Word, Id) ->
+insert_words_to_index(Words, Id) when is_list(Words) ->
+    lists:foreach(fun(Word) -> insert_word_to_index(Word, Id) end, Words);
+
+insert_words_to_index(_, _) ->
+    ok.
+
+insert_word_to_index(Word, Id) ->
     case ets:lookup(see_index, Word) of
         [#index{pages = Pages}] ->
             ets:insert(see_index, #index{word = Word, pages = sets:add_element(Id, Pages)});

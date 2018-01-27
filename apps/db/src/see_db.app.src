@@ -5,8 +5,9 @@
     {modules, [
         see_db,
         see_db_app,
-        see_db_sup,
         see_db_srv,
+        see_db_storage_ets,
+        see_db_sup,
         see_text,
         see_web
     ]},
