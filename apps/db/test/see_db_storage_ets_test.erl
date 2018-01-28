@@ -9,11 +9,10 @@
 -define(WORD2, <<"word2">>).
 
 start() ->
-    see_db_storage_ets:init().
+    see_db_storage_ets:start().
 
 stop(_) ->
-    ets:delete(see_pages),
-    ets:delete(see_index).
+    see_db_storage_ets:stop().
 
 search(Word) ->
     Pages = sets:to_list(see_db_storage_ets:get_pages_from_index(Word)),

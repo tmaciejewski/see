@@ -47,7 +47,7 @@ search(Query) when is_binary(Query) ->
 
 init(Options) ->
     Storage = proplists:get_value(storage, Options),
-    Storage:init(),
+    Storage:start(),
     case proplists:get_value(domain_filter, Options) of
         undefined ->
             {ok, #state{storage = Storage ,domain_filter = none}};
@@ -57,8 +57,8 @@ init(Options) ->
             {stop, wrong_domain_filter}
     end.
 
-terminate(_, _) ->
-    ok.
+terminate(_, #state{storage = Storage}) ->
+    Storage:stop().
 
 handle_cast({visited, URL, {data, Title, Data}}, State = #state{storage = Storage, timers = Timers}) ->
     cancel_timer(URL, Timers),

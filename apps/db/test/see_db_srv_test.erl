@@ -17,7 +17,7 @@ start(Options) ->
     meck:new(see_text),
     meck:expect(see_text, extract_words, fun(X) -> binary:split(X, <<" ">>, [global, trim_all]) end),
     meck:new(see_db_storage, [non_strict]),
-    meck:expect(see_db_storage, init, fun() -> ok end),
+    meck:expect(see_db_storage, start, fun() -> ok end),
     {ok, Pid} = see_db_srv:start([{storage, see_db_storage} | Options]),
     ?assert(is_pid(Pid)),
     Pid.
@@ -29,11 +29,12 @@ start_with_domain_filter() ->
     start([{domain_filter, "foo"}]).
 
 stop(_) ->
+    meck:expect(see_db_storage, stop, fun() -> ok end),
+    see_db_srv:stop(),
     ?assert(meck:validate(see_text)),
     ?assert(meck:validate(see_db_storage)),
     meck:unload(see_text),
-    meck:unload(see_db_storage),
-    see_db_srv:stop().
+    meck:unload(see_db_storage).
 
 find_timer(Pid) ->
     ets:match(timer_tab, {'_', timeout, {timer, send, [Pid, '$1']}}).
