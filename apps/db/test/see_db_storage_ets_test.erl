@@ -75,6 +75,16 @@ when_two_urls_has_the_same_word__update_url_adds_them_both_to_index_test_() ->
              [?_assertEqual([{?URL, ?TITLE}, {?URL2, ?TITLE2}], search(?WORD1))]
      end}.
 
+when_url_is_already_indexed__add_url_does_nothing_test_() ->
+    {setup, fun start/0, fun stop/1,
+     fun(_) ->
+             see_db_storage_ets:add_url(?URL),
+             see_db_storage_ets:get_unvisited(),
+             see_db_storage_ets:update_url(?URL, ?TITLE, [?WORD1]),
+             see_db_storage_ets:add_url(?URL),
+             [?_assertEqual([{?URL, ?TITLE}], search(?WORD1))]
+     end}.
+
 when_no_url_has_given_word__return_empty_set_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
