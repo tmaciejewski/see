@@ -17,7 +17,7 @@ start(Options) ->
     meck:new(see_text),
     meck:expect(see_text, extract_words, fun(X) -> binary:split(X, <<" ">>, [global, trim_all]) end),
     meck:new(see_db_storage, [non_strict]),
-    meck:expect(see_db_storage, start, fun() -> ok end),
+    meck:expect(see_db_storage, start, fun() -> {ok, self()} end),
     {ok, Pid} = see_db_srv:start([{storage, see_db_storage} | Options]),
     ?assert(is_pid(Pid)),
     Pid.
@@ -42,6 +42,20 @@ find_timer(Pid) ->
 trigger_timeout(Pid) ->
     [[Msg]] = find_timer(Pid),
     Pid ! Msg.
+
+when_storage_start_fails__init_fails_test_() ->
+    {setup,
+     fun() -> 
+             meck:new(see_db_storage, [non_strict]),
+             meck:expect(see_db_storage, start, fun() -> {error, fail} end)
+     end,
+     fun(_) ->
+             ?assert(meck:validate(see_db_storage)),
+             meck:unload(see_db_storage)
+     end,
+     fun(_) ->
+             ?_assertEqual({error, fail}, see_db_srv:start([{storage, see_db_storage}]))
+     end}.
 
 when_no_queued_urls__next_returns_nothing_test_() ->
     {setup, fun start/0, fun stop/1,
@@ -71,21 +85,21 @@ when_url_is_invalid__queue_returns_error_test_() ->
               ?_assertEqual(url_error, see_db_srv:queue(<<"www:wrong:url">>))]
      end}.
 
-when_queued_url_with_no_path__root_path_is_added__test_() ->
+when_queued_url_with_no_path__root_path_is_added_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              meck:expect(see_db_storage, add_url, fun(<<"http://www.url.com/">>) -> ok end),
              ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com">>))
      end}.
 
-when_queued_url_with_fragment__fragment_is_discared__test_() ->
+when_queued_url_with_fragment__fragment_is_discared_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              meck:expect(see_db_storage, add_url, fun(<<"http://www.url.com/foo?query">>) -> ok end),
              ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/foo?query#fragment">>))
      end}.
 
-when_domain_filter_is_given__queueing_only_accepts_matching_urls__test_() ->
+when_domain_filter_is_given__queueing_only_accepts_matching_urls_test_() ->
     {setup, fun start_with_domain_filter/0, fun stop/1,
      fun(_) ->
              meck:expect(see_db_storage, add_url, [{[<<"http://www.foo.com/">>], ok},
@@ -96,14 +110,14 @@ when_domain_filter_is_given__queueing_only_accepts_matching_urls__test_() ->
               ?_assertEqual(filter_mismatch, see_db_srv:queue(<<"http://www.bar.com/foo">>))]
      end}.
 
-when_encoded_url_is_queued__it_is_returned_decoded__test_() ->
+when_encoded_url_is_queued__it_is_returned_decoded_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
              meck:expect(see_db_storage, add_url, [{[<<"https://pl.wikipedia.org/wiki/Wikipedia:Strona_g%c5%82%c3%b3wna">>], ok}]),
              ?_assertEqual(ok, see_db_srv:queue(<<"https://pl.wikipedia.org/wiki/Wikipedia:Strona_główna"/utf8>>))
      end}.
 
-when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() ->
+when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(Pid) ->
              Self = self(),
@@ -120,7 +134,7 @@ when_page_returned_by_next_is_not_visited_in_time__it_is_queued_again__test_() -
              end
      end}.
 
-when_visited_is_called__update_url_in_the_storage__test_() ->
+when_visited_is_called__update_url_in_the_storage_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(Pid) ->
              meck:expect(see_text, extract_words, fun(words) -> extract_words end),

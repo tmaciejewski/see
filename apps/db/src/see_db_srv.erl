@@ -47,14 +47,18 @@ search(Query) when is_binary(Query) ->
 
 init(Options) ->
     Storage = proplists:get_value(storage, Options),
-    Storage:start(),
-    case proplists:get_value(domain_filter, Options) of
-        undefined ->
-            {ok, #state{storage = Storage ,domain_filter = none}};
-        DomainFilter when is_list(DomainFilter) ->
-            {ok, #state{storage = Storage, domain_filter = DomainFilter}};
-        _ ->
-            {stop, wrong_domain_filter}
+    case Storage:start() of
+        {ok, _} ->
+            case proplists:get_value(domain_filter, Options) of
+                undefined ->
+                    {ok, #state{storage = Storage ,domain_filter = none}};
+                DomainFilter when is_list(DomainFilter) ->
+                    {ok, #state{storage = Storage, domain_filter = DomainFilter}};
+                _ ->
+                    {stop, wrong_domain_filter}
+            end;
+        {error, Reason} ->
+            {stop, Reason}
     end.
 
 terminate(_, #state{storage = Storage}) ->
