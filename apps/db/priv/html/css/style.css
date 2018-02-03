@@ -1,3 +1,11 @@
+h1 {
+    font-size: 60px;
+}
+
+.logo {
+    font-family: 'Oleo Script', cursive;
+    color: #990000;
+}
 .row {
-        margin-bottom: 15px;
+    margin-bottom: 15px;
 }
