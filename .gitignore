@@ -2,3 +2,4 @@ ebin
 *.swp
 _build
 rebar.lock
+Mnesia.*

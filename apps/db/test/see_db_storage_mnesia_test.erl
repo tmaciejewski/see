@@ -1,16 +1,19 @@
--module(see_db_storage_ets_test).
+-module(see_db_storage_mnesia_test).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("see_db_storage_test.hrl").
 
 start() ->
-    ok = see_db_storage_ets:start(),
-    see_db_storage_ets.
+    mnesia:create_schema([node()]),
+    ok = see_db_storage_mnesia:start(),
+    see_db_storage_mnesia:create_tables(),
+    see_db_storage_mnesia.
 
-stop(see_db_storage_ets) ->
-    see_db_storage_ets:stop().
+stop(see_db_storage_mnesia) ->
+    see_db_storage_mnesia:stop(),
+    mnesia:delete_schema([node()]).
 
-see_db_storage_ets_test_() ->
+see_db_storage_mnesia_test_() ->
     {foreach,
      fun start/0,
      fun stop/1,

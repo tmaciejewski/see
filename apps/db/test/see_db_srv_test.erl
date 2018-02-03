@@ -17,7 +17,7 @@ start(Options) ->
     meck:new(see_text),
     meck:expect(see_text, extract_words, fun(X) -> binary:split(X, <<" ">>, [global, trim_all]) end),
     meck:new(see_db_storage, [non_strict]),
-    meck:expect(see_db_storage, start, fun() -> {ok, self()} end),
+    meck:expect(see_db_storage, start, fun() -> ok end),
     {ok, Pid} = see_db_srv:start([{storage, see_db_storage} | Options]),
     ?assert(is_pid(Pid)),
     Pid.

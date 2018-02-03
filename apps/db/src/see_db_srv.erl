@@ -48,7 +48,7 @@ search(Query) when is_binary(Query) ->
 init(Options) ->
     Storage = proplists:get_value(storage, Options),
     case Storage:start() of
-        {ok, _} ->
+        ok ->
             case proplists:get_value(domain_filter, Options) of
                 undefined ->
                     {ok, #state{storage = Storage ,domain_filter = none}};

@@ -9,19 +9,44 @@ up into two applications:
 
 ## see_db
 
-This application handles indexing and web interface.
-There could be only one node running this application.
-It allows to choose storage option by `storage` option 
-in app file. Currently only ETS table is supported, 
-so it's not persistent.
+`see_db` application handles indexing and web interface.
+It allows choosing storage backend  `storage` option 
+in `.app` file. Currently only ETS and Mnesia are supported.
 
-To start the application, run `start_db_node`
+To start the application, run `start_db_node` script.
 
 Application parameters:
 * `ip` (eg. `{0,0,0,0}`) -- web server ip address
 * `port` (eg. `8888`) -- web server port
 * `domain_filter` (eg. `"^localhost"`) -- regexp filter for URLs (useful for narrowing searching for only specific domain)
 * `storage` -- storage module
+
+### ETS storage
+
+ETS storage allows easy setup, but it lacks persistance and distribution.
+Only one `db` node is allowed, so the entire data must fit into RAM of a single machine.
+
+To select ETS storage use `see_db_storage_ets` value as `storage` app option.
+
+### Mnesia storage
+
+Mnesia storage can be used to gain persistance and distribution. There can 
+be as many `db` nodes as needed, though it was only tested using a single node.
+All tables are `disc_copy`, so it still must fit in RAM. Table fragmentation 
+is not yet implemented.
+
+To select Mnesia storage use `see_db_storage_mnesia` value as `storage` app option.
+Then you need to create schema. To create schema for a single node, run 
+`rebar3 shell --sname db@localhost` (or other name if you use custom name) and type:
+
+    (db@localhost)1> mnesia:create_schema([node()]).
+    ok
+    (db@localhost)2> see_db_storage_mnesia:start().        
+    ok
+    (db@localhost)3> see_db_storage_mnesia:create_tables().
+    {atomic,ok}
+
+And exit erlang shell.
 
 ## see_crawler
 
@@ -45,9 +70,8 @@ unvisited URLs.
 
 ## TODO
 
-* different encoding support (eg. 1250cp)
+* different encoding support (eg. iso-8859, cp-1250)
 * ranking
 * stemming
-* distributed index storage
-* persistent index storage
+* complex queries (phrases, logic operators, `inurl:`, `intitle:`, `site:`)
 * periodically updating already visited pages

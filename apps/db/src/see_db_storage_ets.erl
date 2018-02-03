@@ -1,8 +1,7 @@
 -module(see_db_storage_ets).
 -behaviour(gen_server).
 
--record(page, {id, url, title, content, last_visit = erlang:timestamp()}).
--record(index, {word, pages}).
+-include_lib("see_db_records.hrl").
 
 -export([start/0,
          stop/0,
@@ -21,7 +20,12 @@
          code_change/3]).
 
 start() ->
-    gen_server:start({local, ?MODULE}, ?MODULE, [], []).
+    case gen_server:start({local, ?MODULE}, ?MODULE, [], []) of
+        {ok, _} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 stop() ->
     gen_server:call(?MODULE, stop).
