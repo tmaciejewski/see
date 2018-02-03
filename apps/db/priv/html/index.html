@@ -18,7 +18,10 @@
                 <div class="col-md-8 col-md-offset-2">
                     <div class="input-group input-group-lg">
                         <input type="text" autofocus class="form-control" placeholder="Search for..." id="search-input">
-                        <span class="input-group-btn"><button class="btn btn-default" type="button" id="search-button">Search</button></span>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="search-button">Search</button>
+                            <button class="btn btn-default" type="button" id="more-button" data-toggle="collapse" data-target="#more-panel">More</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -27,13 +30,11 @@
                 <div class="col-md-8 col-md-offset-2" id="alert-box"></div>
             </div>
 
-            <div class="row">
+            <div class="row collapse" id="more-panel">
                 <div class="col-md-8 col-md-offset-2">
                     <div class="panel panel-default ">
-                        <div class="panel-heading">
-                            <a href="#" data-toggle="collapse"data-target="#advanced-panel">Advanced</a>
-                        </div>
-                        <div class="panel-body collapse" id="advanced-panel">
+                        <div class="panel-heading">More</div>
+                        <div class="panel-body">
                             <label class="control-label" for="url">Add URL</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="url" placeholder="URL...">
@@ -53,11 +54,14 @@
             <% if (results.length > 0) { %>
                 <div class="list-group">
                     <% _.each(results, function(result) { %>
-                        <a class="list-group-item" href="<%= result.url %>">
-                            <h4>
-                                <% if (result.title.length > 0) print(result.title); else print(result.url); %>
-                            </h4>
-                        </a>
+                        <div class="list-group-item">
+                            <a href="<%= result.url %>">
+                                <h4>
+                                    <% if (result.title.length > 0) print(result.title); else print(result.url); %>
+                                </h4>
+                            </a>
+                            <% if (result.url.length > 100) print(result.url.substring(0, 100) + '...'); else print(result.url); %>
+                        </div>
                     <% }); %>
                 </ol>
             <% } else { %>
