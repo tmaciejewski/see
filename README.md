@@ -1,16 +1,13 @@
 # SEE
 
-SEE (or see, whatever) is a simple search engine written in Erlang. So
-far it can crawl through web indexing new pages into ets table. It's split
-up into two applications:
-
-* `see_db`
-* `see_crawler`
+SEE (or see, whatever) is a simple search engine written in Erlang.
+It provides web crawler, search engine and web frontend. It's split
+up into two applications: `see_db`, `see_crawler`.
 
 ## see_db
 
 `see_db` application handles indexing and web interface.
-It allows choosing storage backend  `storage` option 
+It allows choosing storage backend by `storage` option 
 in `.app` file. Currently only ETS and Mnesia are supported.
 
 To start the application, run `start_db_node` script.
@@ -23,7 +20,7 @@ Application parameters:
 
 ### ETS storage
 
-ETS storage allows easy setup, but it lacks persistance and distribution.
+ETS storage is easy to set up, but it lacks persistance and distribution.
 Only one `db` node is allowed, so the entire data must fit into RAM of a single machine.
 
 To select ETS storage use `see_db_storage_ets` value as `storage` app option.
@@ -32,11 +29,11 @@ To select ETS storage use `see_db_storage_ets` value as `storage` app option.
 
 Mnesia storage can be used to gain persistance and distribution. There can 
 be as many `db` nodes as needed, though it was only tested using a single node.
-All tables are `disc_copy`, so it still must fit in RAM. Table fragmentation 
+All tables are `disc_copy`, so it still must fit into RAM as table fragmentation 
 is not yet implemented.
 
 To select Mnesia storage use `see_db_storage_mnesia` value as `storage` app option.
-Then you need to create schema. To create schema for a single node, run 
+Then you need to create schema and tables. To do it for a single node, run 
 `rebar3 shell --sname db@localhost` (or other name if you use custom name) and type:
 
     (db@localhost)1> mnesia:create_schema([node()]).
