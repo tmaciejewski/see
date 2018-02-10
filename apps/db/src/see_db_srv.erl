@@ -20,7 +20,7 @@
 
 -define(MAX_RESULTS, 100).
 
--record(state, {storage, timers = maps:new(), domain_filter = none, visiting_timeout = 30000}).
+-record(state, {storage, rank, timers = maps:new(), domain_filter = none, visiting_timeout = 30000}).
 
 start(Options) ->
     gen_server:start({local, ?MODULE}, ?MODULE, Options, []).
@@ -46,14 +46,15 @@ search(Query) when is_binary(Query) ->
 %----------------------------------------------------------
 
 init(Options) ->
+    Rank = proplists:get_value(rank, Options),
     Storage = proplists:get_value(storage, Options),
     case Storage:start() of
         ok ->
             case proplists:get_value(domain_filter, Options) of
                 undefined ->
-                    {ok, #state{storage = Storage ,domain_filter = none}};
+                    {ok, #state{rank = Rank, storage = Storage, domain_filter = none}};
                 DomainFilter when is_list(DomainFilter) ->
-                    {ok, #state{storage = Storage, domain_filter = DomainFilter}};
+                    {ok, #state{rank = Rank, storage = Storage, domain_filter = DomainFilter}};
                 _ ->
                     {stop, wrong_domain_filter}
             end;
@@ -103,13 +104,14 @@ handle_call(next, _, State = #state{storage = Storage, timers = Timers}) ->
             {reply, nothing, State}
     end;
 
-handle_call({search, Query}, _, State = #state{storage = Storage}) ->
+handle_call({search, Query}, _, State = #state{storage = Storage, rank = Rank}) ->
     Words = see_text:extract_words(Query),
-    PageLists = [Storage:get_pages_from_index(Word) || Word <- Words],
-    ResultList = lists:sublist(merge_page_lists(PageLists), ?MAX_RESULTS),
-    ResultPages = [Storage:get_page(Id) || Id <- ResultList],
-    error_logger:info_report([{query, Query}, {results, ResultPages}]),
-    {reply, ResultPages, State}.
+    AllPages = merge_page_lists([Storage:get_pages_from_index(Word) || Word <- Words]),
+    RankedPages = [{Page, Rank:rank(Page, Words, Storage)} || Page <- AllPages],
+    Result = lists:sublist(lists:keysort(2, RankedPages), ?MAX_RESULTS),
+    ResultURLs = [Storage:get_page(Id) || {Id, _} <- Result],
+    error_logger:info_report([{query, Query}, {results, ResultURLs}]),
+    {reply, ResultURLs, State}.
 
 handle_info({visiting_timeout, URL}, State = #state{storage = Storage, timers = Timers}) ->
     Storage:set_unvisited(URL),
