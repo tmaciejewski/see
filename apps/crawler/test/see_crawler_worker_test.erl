@@ -56,11 +56,24 @@ when_page_is_binary__call_visited_with_binary__test_() ->
 when_page_is_redirect__call_visited_with_redirect_url__test_() ->
     {setup, fun start_crawler/0, fun stop_crawler/1,
      fun(Pid) ->
-             RedirectURL = "redirected url",
+             RedirectURL = <<"http://redirected.url">>,
              meck:expect(see_db_proxy, next, [{['_'], {ok, ?URL}}]),
              meck:expect(see_http, get_page, [{[?URL], {redirect, RedirectURL}}]),
              meck:expect(see_db_proxy, visited, [{['_', ?URL, {redirect, RedirectURL}], ok}]),
              meck:expect(see_db_proxy, queue, [{['_', RedirectURL], ok}]),
+             trigger_timeout(Pid),
+             ?_assert(is_pid(Pid))
+     end}.
+
+when_page_is_relative_redirect__call_visited_with_absolute_redirect_url__test_() ->
+    {setup, fun start_crawler/0, fun stop_crawler/1,
+     fun(Pid) ->
+             RelativeRedirectURL = <<"/redirected/url">>,
+             AbsoluteRedirectURL = hackney_url:make_url(?URL, RelativeRedirectURL, <<>>),
+             meck:expect(see_db_proxy, next, [{['_'], {ok, ?URL}}]),
+             meck:expect(see_http, get_page, [{[?URL], {redirect, RelativeRedirectURL}}]),
+             meck:expect(see_db_proxy, visited, [{['_', ?URL, {redirect, AbsoluteRedirectURL}], ok}]),
+             meck:expect(see_db_proxy, queue, [{['_', AbsoluteRedirectURL], ok}]),
              trigger_timeout(Pid),
              ?_assert(is_pid(Pid))
      end}.

@@ -72,7 +72,8 @@ visit(DbNode, URL) ->
             lists:foreach(fun(Link) -> see_db_proxy:queue(DbNode, Link) end, Links);
         binary ->
             see_db_proxy:visited(DbNode, URL, binary);
-        {redirect, RedirectURL} ->
+        {redirect, Link} ->
+            RedirectURL = absolute_link(URL, Link),
             error_logger:info_report([{url, URL}, {redirect, RedirectURL}]),
             see_db_proxy:visited(DbNode, URL, {redirect, RedirectURL}),
             see_db_proxy:queue(DbNode, RedirectURL);
