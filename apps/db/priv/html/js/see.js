@@ -15,8 +15,8 @@ var AlertView = Backbone.View.extend({
     }
 });
 
-var AdvancedView = Backbone.View.extend({
-    el: '#advanced-panel',
+var MoreView = Backbone.View.extend({
+    el: '#more-panel',
 
     events: {
         'keydown #url': 'keyDown',
@@ -78,4 +78,4 @@ var SearchBoxView = Backbone.View.extend({
 });
 
 var searchBoxView = new SearchBoxView();
-var advancedView = new AdvancedView();
+var moreView = new MoreView();
