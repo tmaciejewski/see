@@ -54,13 +54,16 @@
             <% if (results.length > 0) { %>
                 <div class="list-group">
                     <% _.each(results, function(result) { %>
-                        <div class="list-group-item">
+                        <div class="result-item list-group-item">
                             <a href="<%= result.url %>">
                                 <h4>
                                     <% if (result.title.length > 0) print(result.title); else print(result.url); %>
                                 </h4>
                             </a>
-                            <% if (result.url.length > 100) print(result.url.substring(0, 100) + '...'); else print(result.url); %>
+
+                            <span title="<%= result.url %>">
+                                <% if (result.url.length > 100) print(result.url.substring(0, 100) + '...'); else print(result.url); %>
+                            </span>
                         </div>
                     <% }); %>
                 </ol>

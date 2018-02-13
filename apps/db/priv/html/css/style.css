@@ -9,3 +9,7 @@ h1 {
 .row {
     margin-bottom: 15px;
 }
+
+.result-item span {
+    color: #119922;
+}
