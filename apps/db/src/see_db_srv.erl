@@ -124,10 +124,17 @@ code_change(_OldVsn, State, _) ->
 
 parse_url(URL) ->
     case catch(hackney_url:normalize(hackney_url:urldecode(URL))) of
-        {'EXIT', _Reason} ->
-            error;
-        ParsedURL ->
-            {ok, ParsedURL#hackney_url{fragment = <<>>}}
+        ParsedURL = #hackney_url{path = <<$/, Path/binary>>} ->
+            case filename:safe_relative_path(Path) of
+                unsafe ->
+                    error;
+                [] ->
+                    {ok, ParsedURL#hackney_url{path = <<$/>>, fragment = <<>>}};
+                SimplifiedPath ->
+                    {ok, ParsedURL#hackney_url{path = <<$/, SimplifiedPath/binary>>, fragment = <<>>}}
+            end;
+        _ ->
+            error
     end.
 
 filter_url(_, none) ->
