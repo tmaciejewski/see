@@ -11,7 +11,9 @@
          get_unvisited/0,
          set_unvisited/1,
          get_page/1,
-         get_pages_from_index/1]).
+         get_pages_from_index/1,
+         get_words/1,
+         get_page_count/0]).
 
 create_tables() ->
     create_tables([node()]).
@@ -50,6 +52,12 @@ get_page(Id) ->
 
 get_pages_from_index(Word) ->
     transaction(fun() -> do_get_pages_from_index(Word) end).
+
+get_words(Id) ->
+    transaction(fun() -> do_get_words(Id) end).
+
+get_page_count() ->
+    mnesia:table_info(see_pages, size).
 
 %-------------------------------------------------------------------------
 
@@ -140,4 +148,12 @@ do_get_pages_from_index(Word) ->
             sets:new();
         [#index{pages = Pages}] ->
             Pages
+    end.
+
+do_get_words(Id) ->
+    case mnesia:read(see_pages, Id) of
+        [#page{content = Words}] when is_list(Words) ->
+            Words;
+        _Other ->
+            []
     end.

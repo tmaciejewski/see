@@ -107,7 +107,7 @@ handle_call(next, _, State = #state{storage = Storage, timers = Timers}) ->
 handle_call({search, Query}, _, State = #state{storage = Storage, rank = Rank}) ->
     Words = see_text:extract_words(Query),
     AllPages = merge_page_lists([Storage:get_pages_from_index(Word) || Word <- Words]),
-    RankedPages = [{Page, Rank:rank(Page, Words, Storage)} || Page <- AllPages],
+    RankedPages = [{Page, -Rank:rank(Page, Words, Storage)} || Page <- AllPages],
     Result = lists:sublist(lists:keysort(2, RankedPages), ?MAX_RESULTS),
     ResultURLs = [Storage:get_page(Id) || {Id, _} <- Result],
     error_logger:info_report([{query, Query}, {results, ResultURLs}]),

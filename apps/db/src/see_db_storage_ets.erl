@@ -10,7 +10,9 @@
          get_unvisited/0,
          set_unvisited/1,
          get_page/1,
-         get_pages_from_index/1]).
+         get_pages_from_index/1,
+         get_words/1,
+         get_page_count/0]).
 
 -export([init/1,
          handle_call/3,
@@ -47,6 +49,12 @@ get_page(Id) ->
 
 get_pages_from_index(Word) ->
     gen_server:call(?MODULE, {get_pages_from_index, Word}).
+
+get_words(Id) ->
+    gen_server:call(?MODULE, {get_words, Id}).
+
+get_page_count() ->
+    gen_server:call(?MODULE, get_page_count).
 
 %%-------------------------------------------------------------
 
@@ -112,7 +120,18 @@ handle_call({get_pages_from_index, Word}, _, State) ->
             {reply, sets:new(), State};
         [#index{pages = Pages}] ->
             {reply, Pages, State}
-    end.
+    end;
+
+handle_call({get_words, Id}, _, State) ->
+    case ets:lookup(see_pages, Id) of
+        [#page{content = Words}] when is_list(Words) ->
+            {reply, Words, State};
+        _Other ->
+            {reply, [], State}
+    end;
+
+handle_call(get_page_count, _, State) ->
+    {reply, ets:info(see_pages, size), State}.
 
 handle_cast(_, State) ->
     {noreply, State}.

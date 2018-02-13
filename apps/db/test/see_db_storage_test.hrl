@@ -10,11 +10,13 @@ search(Storage, Word) ->
     lists:map(fun Storage:get_page/1, Pages).
 
 when_no_url_added__gets_unvisited_returns_nothing__test_(Storage) ->
-    ?_assertEqual(nothing, Storage:get_unvisited()).
+    [?_assertEqual(nothing, Storage:get_unvisited()),
+     ?_assertEqual(0, Storage:get_page_count())].
 
 when_new_url_is_added__gets_unvisited_returns_it_once__test_(Storage) ->
     Storage:add_url(?URL),
-    [?_assertEqual({ok, ?URL}, Storage:get_unvisited()),
+    [?_assertEqual(1, Storage:get_page_count()),
+     ?_assertEqual({ok, ?URL}, Storage:get_unvisited()),
      ?_assertEqual(nothing, Storage:get_unvisited())].
 
 when_url_is_pending__set_unvisited_enqueues_it_back__test_(Storage) ->
@@ -29,6 +31,13 @@ when_url_is_pending__update_url_sets_add_to_index_test_(Storage) ->
     Storage:update_url(?URL, ?TITLE, [?WORD1, ?WORD2]),
     [?_assertEqual([{?URL, ?TITLE}], search(Storage, ?WORD1)),
      ?_assertEqual([{?URL, ?TITLE}], search(Storage, ?WORD2))].
+
+when_url_is_visited__get_words_return_page_words_test_(Storage) ->
+    Storage:add_url(?URL),
+    {ok, ?URL} = Storage:get_unvisited(),
+    Storage:update_url(?URL, ?TITLE, [?WORD1, ?WORD2]),
+    [Page] = sets:to_list(Storage:get_pages_from_index(?WORD1)),
+    ?_assertEqual([?WORD1, ?WORD2], Storage:get_words(Page)).
 
 when_url_is_revisited__update_url_updates_index_test_(Storage) ->
     Storage:add_url(?URL),

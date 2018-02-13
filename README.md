@@ -69,7 +69,7 @@ unvisited URLs.
 
 - [x] HTTPS support
 - [ ] different encoding support (eg. iso-8859, cp-1250)
-- [ ] td-idf ranking
+- [x] td-idf ranking
 - [x] Mnesia storage backend
 - [ ] Amazon S3 storage backend
 - [ ] PageRank

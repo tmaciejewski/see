@@ -24,7 +24,8 @@
     {env, [
         {storage, see_db_storage_ets},
         %{storage, see_db_storage_mnesia},
-        %{domain_filter, "pl.wikipedia.org"},
+        %{domain_filter, "erlang.org"},
+        {rank, see_rank_tfidf},
         {ip, {0,0,0,0}},
         {port, 8888}
     ]}
