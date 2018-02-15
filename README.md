@@ -7,8 +7,7 @@ up into two applications: `see_db`, `see_crawler`.
 ## see_db
 
 `see_db` application handles indexing and web interface.
-It allows choosing storage backend by `storage` option 
-in `.app` file. Currently only ETS and Mnesia are supported.
+It's designed to allow switching storage backend and ranking algorithms.
 
 To start the application, run `start_db_node` script.
 
