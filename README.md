@@ -54,7 +54,11 @@ And exit erlang shell.
 
 Ranking is the most important part of a search engine, as queries may return thousands or millions of results, which is too many for a human to be useful of any kind. Users want only a dozen of the most **relevant** results, and this is the job of a ranking algorithm.
 
-Selecting ranking algorithm is done by setting `rank` option in the app file. Currently only [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) is implemented.
+Selecting ranking algorithm is done by setting `rank` option in the app file. Currently only tf-idf is implemented.
+
+#### tf-idf ranking
+
+[tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) is a simple ranking algorithm that takes into account only word occurence in a page vs in the whole index. To select this algorithm, use `see_rank_tfidf` valua as `rank` option in the app file.
 
 ## see_crawler
 
