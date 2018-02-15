@@ -57,7 +57,7 @@ Selecting ranking algorithm is done by setting `rank` option in the app file. Cu
 
 #### tf-idf ranking
 
-[tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) is a simple ranking algorithm that takes into account only word occurence in a page vs in the whole index. To select this algorithm, use `see_rank_tfidf` valua as `rank` option in the app file.
+[tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) is a simple ranking algorithm that takes into account only word occurences in a page vs in the whole index. To select this algorithm, use `see_rank_tfidf` value as `rank` option in the app file.
 
 ## see_crawler
 
