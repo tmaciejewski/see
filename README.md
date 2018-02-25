@@ -37,17 +37,8 @@ All tables are `disc_copy`, so it still must fit into RAM as table fragmentation
 is not yet implemented.
 
 To select Mnesia storage use `see_db_storage_mnesia` value as `storage` app option.
-Then you need to create schema and tables. To do it for a single node, run 
-`rebar3 shell --sname db@localhost` (or other name if you use custom name) and type:
-
-    (db@localhost)1> mnesia:create_schema([node()]).
-    ok
-    (db@localhost)2> see_db_storage_mnesia:start().        
-    ok
-    (db@localhost)3> see_db_storage_mnesia:create_tables().
-    {atomic,ok}
-
-And exit erlang shell.
+Then you need to create schema and tables. To do it for a single node, run a script 
+`create_mnesia_schema`.
 
 ### Ranking
 

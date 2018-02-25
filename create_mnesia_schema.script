@@ -1,0 +1,9 @@
+#!/usr/bin/env escript
+
+main(_) ->
+    ok = mnesia:delete_schema([node()]),
+    ok = mnesia:create_schema([node()]),
+    ok = see_db_storage_mnesia:start(),
+    {atomic, ok} = see_db_storage_mnesia:create_tables(),
+    io:format("Schema created~n"),
+    halt(0).

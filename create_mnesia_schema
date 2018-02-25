@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rebar3 shell --sname db@localhost --script create_mnesia_schema.script
