@@ -18,6 +18,7 @@ start(Options) ->
     meck:expect(see_text, extract_words, fun(X) -> binary:split(X, <<" ">>, [global, trim_all]) end),
     meck:new(storage_mock, [non_strict]),
     meck:expect(storage_mock, start, fun() -> ok end),
+    meck:expect(storage_mock, stop, fun() -> ok end),
     meck:new(rank_mock, [non_strict]),
     meck:expect(rank_mock, rank, fun(_, _, _) -> 1.0 end),
     {ok, Pid} = see_db_srv:start([{rank, rank_mock}, {storage, storage_mock} | Options]),
@@ -31,7 +32,6 @@ start_with_domain_filter() ->
     start([{domain_filter, "foo"}]).
 
 stop(_) ->
-    meck:expect(storage_mock, stop, fun() -> ok end),
     see_db_srv:stop(),
     ?assert(meck:validate(see_text)),
     ?assert(meck:validate(storage_mock)),
@@ -106,8 +106,8 @@ when_queued_url_with_fragment__fragment_is_discared_test_() ->
 when_queued_url_with_nonsimple_path__it_is_simplified_test_() ->
     {setup, fun start/0, fun stop/1,
      fun(_) ->
-             meck:expect(storage_mock, add_url, fun(<<"http://www.url.com/foo/baz">>) -> ok end),
-             ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/foo/bar/../bar/../baz">>))
+             meck:expect(storage_mock, add_url, fun(<<"http://www.url.com/foo/baz/">>) -> ok end),
+             ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/foo/bar/bar/../../bar/../baz/">>))
      end}.
 
 when_domain_filter_is_given__queueing_only_accepts_matching_urls_test_() ->

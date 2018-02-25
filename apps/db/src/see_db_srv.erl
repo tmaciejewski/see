@@ -124,18 +124,42 @@ code_change(_OldVsn, State, _) ->
 
 parse_url(URL) ->
     case catch(hackney_url:normalize(hackney_url:urldecode(URL))) of
-        ParsedURL = #hackney_url{path = <<$/, Path/binary>>} ->
-            case filename:safe_relative_path(Path) of
-                unsafe ->
-                    error;
-                [] ->
-                    {ok, ParsedURL#hackney_url{path = <<$/>>, fragment = <<>>}};
-                SimplifiedPath ->
-                    {ok, ParsedURL#hackney_url{path = <<$/, SimplifiedPath/binary>>, fragment = <<>>}}
-            end;
+        ParsedURL = #hackney_url{path = Path} ->
+            SimplifiedPath = simplify_path(Path),
+            {ok, ParsedURL#hackney_url{path = SimplifiedPath, fragment = <<>>}};
         _ ->
             error
     end.
+
+simplify_path(Path) ->
+    simplify_path(binary:split(Path, <<"/">>, [global]), []).
+
+simplify_path([], PathParts) ->
+    list_to_binary(lists:reverse(PathParts));
+
+simplify_path([<<>> | Rest], [<<"/">> | PathParts]) ->
+    simplify_path(Rest, [<<"/">> | PathParts]);
+
+simplify_path([<<>> | Rest], PathParts) ->
+    simplify_path(Rest, [<<"/">> | PathParts]);
+
+simplify_path([<<"..">> | Rest], [_Part, <<"/">> | PathParts]) ->
+    simplify_path(Rest, PathParts);
+
+simplify_path([<<"..">> | Rest], [_Part]) ->
+    simplify_path(Rest, [<<"/">>]);
+
+simplify_path([<<"..">> | Rest], []) ->
+    simplify_path(Rest, [<<"/">>]);
+
+simplify_path([Part | Rest], []) ->
+    simplify_path(Rest, [Part]);
+
+simplify_path([Part | Rest], [<<"/">> | PathParts]) ->
+    simplify_path(Rest, [Part, <<"/">> | PathParts]);
+
+simplify_path([Part | Rest], PathParts) ->
+    simplify_path(Rest, [Part, <<"/">> | PathParts]).
 
 filter_url(_, none) ->
     match;
