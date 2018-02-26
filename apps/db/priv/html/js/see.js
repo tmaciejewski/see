@@ -47,13 +47,22 @@ var SearchResultsView = Backbone.View.extend({
 
     fetchResults: function(query) {
         var that = this;
-        $.get('/search?query=' + encodeURIComponent(query), function(resp) {
-            that.render(resp.results);
-        });
+        $.get('/search?query=' + encodeURIComponent(query))
+            .success(function(resp) {
+                that.render(resp.results);
+            })
+            .error(function() {
+                that.showError('Error');
+            });
     },
 
     render: function(results) {
-        this.$el.html(this.template({results: results}));
+        this.$el.html(this.template({results: results, error: ''}));
+        return this;
+    },
+
+    showError: function(errorMsg) {
+        this.$el.html(this.template({results: [], error: errorMsg}));
         return this;
     }
 });

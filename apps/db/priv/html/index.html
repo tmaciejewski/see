@@ -51,7 +51,11 @@
         </div>
 
         <script type="text/template" id="search-result-template">
-            <% if (results.length > 0) { %>
+            <% if (error) { %>
+                <div class="alert alert-danger" role="alert">
+                    <%= error %>
+                </div>
+            <% } else if (results.length > 0) { %>
                 <div class="list-group">
                     <% _.each(results, function(result) { %>
                         <div class="result-item list-group-item">
@@ -68,7 +72,7 @@
                     <% }); %>
                 </ol>
             <% } else { %>
-                <div class="alert alert-dismissible alert-info" role="alert">
+                <div class="alert alert-info" role="alert">
                     No results
                 </div>
             <% } %>
