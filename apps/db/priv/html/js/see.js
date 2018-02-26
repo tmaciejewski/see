@@ -45,6 +45,13 @@ var SearchResultsView = Backbone.View.extend({
     el: '#search-results',
     template: _.template($('#search-result-template').html()),
 
+    fetchResults: function(query) {
+        var that = this;
+        $.get('/search?query=' + encodeURIComponent(query), function(resp) {
+            that.render(resp.results);
+        });
+    },
+
     render: function(results) {
         this.$el.html(this.template({results: results}));
         return this;
@@ -56,26 +63,48 @@ var SearchBoxView = Backbone.View.extend({
 
     events: {
         'keydown #search-input': 'keyDown',
-        'click #search-button': 'search'
+        'click #search-button': 'triggerSearch'
     },
 
-    initialize: function() {
-        this.searchResultsView = new SearchResultsView();
+    initialize: function(router) {
+        this.router = router;
+    },
+
+    setQuery: function(query) {
+        this.$('#search-input').val(query);
     },
 
     keyDown: function(e) {
         if (e.keyCode == ENTER)
-            this.search();
+            this.triggerSearch();
     },
 
-    search: function() {
-        var that = this;
+    triggerSearch: function() {
         var query = this.$('#search-input').val();
-        $.get('/search?query=' + encodeURIComponent(query), function(resp) {
-            that.searchResultsView.render(resp.results);
-        });
+        this.router.navigate('search/' + query, {trigger: true});
     }
 });
 
-var searchBoxView = new SearchBoxView();
-var moreView = new MoreView();
+var Router = Backbone.Router.extend({
+    routes: {
+        '': 'index',
+        'search/*query': 'search'
+    },
+
+    initialize: function() {
+        this.searchBoxView = new SearchBoxView(this);
+        this.moreView = new MoreView();
+        this.searchResultsView = new SearchResultsView();
+    },
+
+    index: function() {
+    },
+
+    search: function(query) {
+        this.searchBoxView.setQuery(query);
+        this.searchResultsView.fetchResults(query);
+    }
+});
+
+var router = new Router();
+Backbone.history.start();
