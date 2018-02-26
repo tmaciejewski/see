@@ -40,7 +40,7 @@ handle_request(Req, "/search") ->
             respond_json(Req, [{results, []}]);
         Query ->
             Results = see_db_srv:search(list_to_binary(Query)),
-            JSONResults = [[{url, URL}, {title, Title}] || {URL, Title} <- Results],
+            JSONResults = [[{url, URL}, {title, iolist_to_binary(Title)}] || {URL, Title} <- Results],
             respond_json(Req, [{results, JSONResults}])
     end;
 
