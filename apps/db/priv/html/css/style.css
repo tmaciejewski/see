@@ -1,9 +1,6 @@
 h1 {
-    font-size: 60px;
-}
-
-.logo {
     font-family: 'Lobster', cursive;
+    font-size: 60px;
     color: #aa4444;
 }
 .row {
