@@ -30,14 +30,19 @@ var MoreView = Backbone.View.extend({
 
     addURL: function() {
         var url = this.$('#url').val();
-        $.post('/add', {'url': url}).done(function(resp) {
-            var alertView = new AlertView();
-            if (resp.result == 'ok') {
-                alertView.render('success', 'Added: ' + url);
-            } else {
-                alertView.render('error', 'Cannot add: ' + url);
-            }
-        });
+        $.post('/add', {'url': url})
+            .success(function(resp) {
+                var alertView = new AlertView();
+                if (resp.result == 'ok') {
+                    alertView.render('success', 'Added: ' + url);
+                } else if (resp.result == 'filter_mismatch') {
+                    alertView.render('error', 'Error: ' + url + ' does not match filter');
+                }
+            })
+            .error(function() {
+                var alertView = new AlertView();
+                alertView.render('error', 'Unknown error');
+            });
     }
 });
 

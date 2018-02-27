@@ -53,8 +53,8 @@ handle_request(Req, "/add") ->
             case see_db_srv:queue(list_to_binary(URL)) of
                 ok ->
                     respond_json(Req, [{result, ok}]);
-                error ->
-                    respond_json(Req, [{result, error}])
+                filter_mismatch ->
+                    respond_json(Req, [{result, filter_mismatch}])
             end
     end;
 
