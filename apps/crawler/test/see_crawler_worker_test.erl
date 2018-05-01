@@ -102,7 +102,7 @@ when_links_are_internal__convert_to_full_uri_test_() ->
     {foreach, fun start_crawler/0, fun stop_crawler/1,
      [fun(Pid) ->
               SubURL = <<?URL/binary, "/bar/sub.html">>,
-              Links = ["relative/link", "/absolute/link"],
+              Links = ["relative/link", "/absolute/link", "/absolute/dir/"],
               Content = "page content",
               Page = "page",
               Text = "page text",
@@ -114,7 +114,9 @@ when_links_are_internal__convert_to_full_uri_test_() ->
               meck:expect(see_html, text, [{[Page], Text}]),
               meck:expect(see_html, links, [{[Page], Links}]),
               meck:expect(see_db_proxy, visited, [{['_', SubURL, {data, Title, Text}], ok}]),
-              meck:expect(see_db_proxy, queue, [{['_', <<?URL/binary, "bar/relative/link">>], ok}, {['_', <<?URL/binary, "absolute/link">>], ok}]),
+              meck:expect(see_db_proxy, queue, [{['_', <<?URL/binary, "bar/relative/link">>], ok},
+                                                {['_', <<?URL/binary, "absolute/link">>], ok},
+                                                {['_', <<?URL/binary, "absolute/dir/">>], ok}]),
               trigger_timeout(Pid),
               ?_assert(is_pid(Pid))
       end,

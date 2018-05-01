@@ -53,7 +53,6 @@ redirect_test_() ->
               ?_assertEqual({redirect, RedirectURL}, see_http:get_page(?URL))
       end,
       fun(_) ->
-              RedirectURL = <<"redirect url">>,
               Headers = [{<<"other-header">>, <<"foo">>}],
               mock_http_response(?URL, {ok, 302, Headers, make_ref()}),
               ?_assertEqual({error, Headers}, see_http:get_page(?URL))
