@@ -105,11 +105,17 @@ when_queued_url_with_fragment__fragment_is_discared_test_() ->
      end}.
 
 when_queued_url_with_nonsimple_path__it_is_simplified_test_() ->
-    {setup, fun start/0, fun stop/1,
-     fun(_) ->
-             meck:expect(storage_mock, add_url, fun(<<"http://www.url.com/foo/baz/">>) -> ok end),
-             ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/foo/bar/bar/../../bar/../baz/">>))
-     end}.
+    {foreach, fun start/0, fun stop/1,
+     [
+      fun(_) ->
+              meck:expect(storage_mock, add_url, fun(<<"http://www.url.com/foo/baz/">>) -> ok end),
+              ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/foo/bar/bar/../../bar/../baz/">>))
+      end,
+      fun(_) ->
+              meck:expect(storage_mock, add_url, fun(<<"http://www.url.com/baz/page.html">>) -> ok end),
+              ?_assertEqual(ok, see_db_srv:queue(<<"http://www.url.com/bar/../baz/page.html">>))
+      end
+     ]}.
 
 when_domain_filter_is_given__queueing_only_accepts_matching_urls_test_() ->
     {setup, fun start_with_domain_filter/0, fun stop/1,

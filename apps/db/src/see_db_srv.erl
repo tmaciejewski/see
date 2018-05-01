@@ -143,6 +143,9 @@ simplify_path([<<>> | Rest], [<<"/">> | PathParts]) ->
 simplify_path([<<>> | Rest], PathParts) ->
     simplify_path(Rest, [<<"/">> | PathParts]);
 
+simplify_path([<<"..">> | Rest], [_Part, <<"/">>]) ->
+    simplify_path(Rest, [<<"/">>]);
+
 simplify_path([<<"..">> | Rest], [_Part, <<"/">> | PathParts]) ->
     simplify_path(Rest, PathParts);
 
