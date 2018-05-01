@@ -19,6 +19,7 @@ see_db_storage_ets_test_() ->
       fun when_new_url_is_added__gets_unvisited_returns_it_once__test_/1,
       fun when_url_is_pending__set_unvisited_enqueues_it_back__test_/1,
       fun when_url_is_pending__update_url_sets_add_to_index_test_/1,
+      fun when_url_is_visited__get_words_return_page_words_test_/1,
       fun when_url_is_revisited__update_url_updates_index_test_/1,
       fun when_two_urls_has_the_same_word__update_url_adds_them_both_to_index_test_/1,
       fun when_url_is_already_indexed__add_url_does_nothing_test_/1,
