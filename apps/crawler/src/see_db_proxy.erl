@@ -9,4 +9,4 @@ visited(DbNode, URL, Content) ->
     rpc:cast(DbNode, see_db_srv, visited, [URL, Content]).
 
 queue(DbNode, URL) ->
-    rpc:cast(DbNode, see_db_srv, queue, [URL]).
+    rpc:call(DbNode, see_db_srv, queue, [URL]).
