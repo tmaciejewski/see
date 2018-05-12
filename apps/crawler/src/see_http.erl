@@ -14,10 +14,16 @@ get_page(URL) ->
     Headers = [{"user-agent", "SEE (Search Engine in Erlang; https://github.com/tmaciejewski/see)"}],
     Payload = <<>>,
     Options = [{follow_redirect, false}],
-    Response = hackney:request(get, URL, Headers, Payload, Options),
-    handle_response(Response).
+    case hackney:request(get, URL, Headers, Payload, Options) of
+        {ok, Code, ResponseHeaders, BodyRef} ->
+            Return = handle_response(Code, ResponseHeaders, BodyRef),
+            hackney:close(BodyRef),
+            Return;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
-handle_response({ok, ?CODE_OK, Headers, BodyRef}) ->
+handle_response(?CODE_OK, Headers, BodyRef) ->
     case is_text_page(Headers) of
         true ->
             hackney:body(BodyRef, ?MAX_LENGTH);
@@ -25,7 +31,7 @@ handle_response({ok, ?CODE_OK, Headers, BodyRef}) ->
             binary
     end;
 
-handle_response({ok, ?CODE_MOVED, Headers, _}) ->
+handle_response(?CODE_MOVED, Headers, _) ->
     HeaderDict = hackney_headers:new(Headers),
     case hackney_headers:get_value(<<"location">>, HeaderDict) of
         undefined ->
@@ -34,7 +40,7 @@ handle_response({ok, ?CODE_MOVED, Headers, _}) ->
             {redirect, Location}
     end;
 
-handle_response({ok, ?CODE_FOUND, Headers, _}) ->
+handle_response(?CODE_FOUND, Headers, _) ->
     HeaderDict = hackney_headers:new(Headers),
     case hackney_headers:get_value(<<"location">>, HeaderDict) of
         undefined ->
@@ -43,11 +49,8 @@ handle_response({ok, ?CODE_FOUND, Headers, _}) ->
             {redirect, Location}
     end;
 
-handle_response({ok, Code, Headers, _}) ->
-    {error, {Code, Headers}};
-
-handle_response({error, Reason}) ->
-    {error, Reason}.
+handle_response(Code, Headers, _) ->
+    {error, {Code, Headers}}.
 
 is_text_page(Headers) ->
     HeaderDict = hackney_headers:new(Headers),

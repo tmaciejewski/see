@@ -11,6 +11,10 @@ stop(_) ->
     ?assert(meck:validate(hackney)),
     meck:unload(hackney).
 
+mock_http_response(URL, Result = {ok, _, _, Ref}) ->
+    meck:expect(hackney, request, [{[get, URL, '_', '_', '_'], Result}]),
+    meck:expect(hackney, close, [{[Ref], ok}]);
+
 mock_http_response(URL, Result) ->
     meck:expect(hackney, request, [{[get, URL, '_', '_', '_'], Result}]).
 
