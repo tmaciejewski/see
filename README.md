@@ -70,6 +70,12 @@ Each crawler requests an unvisited URL from `db` node and visits it, extracting 
 and sends them back to `db` node. Words after normalization are saved into the index and links are inserted as
 unvisited URLs.
 
+## Demo
+
+Check out this site to see a running version: http://vps238545.ovh.net:8888/
+
+It has indexed whole Erlang documentation.
+
 ## TODO
 
 - [x] HTTPS support
