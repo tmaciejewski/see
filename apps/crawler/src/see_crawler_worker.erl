@@ -91,7 +91,7 @@ absolute_link(URL, Link) ->
     case re:run(Link, <<"[^/]+://">>) of
         nomatch ->
             DirName = filename:dirname(ParsedURL#hackney_url.path),
-            hackney_url:unparse_url(ParsedURL#hackney_url{path = join_paths(DirName, Link)});
+            hackney_url:unparse_url(ParsedURL#hackney_url{path = join_paths(DirName, Link), qs = <<>>});
         _ ->
             Link
     end.

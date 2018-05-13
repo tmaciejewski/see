@@ -121,6 +121,26 @@ when_links_are_internal__convert_to_full_uri_test_() ->
               ?_assert(is_pid(Pid))
       end,
       fun(Pid) ->
+              URLWithQuery = <<?URL/binary, "?query">>,
+              Links = ["relative/link", "/absolute/link", "/absolute/dir/"],
+              Content = "page content",
+              Page = "page",
+              Text = "page text",
+              Title = "page title",
+              meck:expect(see_db_proxy, next, [{['_'], {ok, URLWithQuery}}]),
+              meck:expect(see_http, get_page, [{[URLWithQuery], {ok, Content}}]),
+              meck:expect(see_html, parse, [{[Content], Page}]),
+              meck:expect(see_html, title, [{[Page], Title}]),
+              meck:expect(see_html, text, [{[Page], Text}]),
+              meck:expect(see_html, links, [{[Page], Links}]),
+              meck:expect(see_db_proxy, visited, [{['_', URLWithQuery, {data, Title, Text}], ok}]),
+              meck:expect(see_db_proxy, queue, [{['_', <<?URL/binary, "relative/link">>], ok},
+                                                {['_', <<?URL/binary, "absolute/link">>], ok},
+                                                {['_', <<?URL/binary, "absolute/dir/">>], ok}]),
+              trigger_timeout(Pid),
+              ?_assert(is_pid(Pid))
+      end,
+      fun(Pid) ->
               Links = ["relative/link", "/absolute/link"],
               Content = "page content",
               Page = "page",
